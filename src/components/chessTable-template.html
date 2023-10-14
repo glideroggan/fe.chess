@@ -1,0 +1,39 @@
+<template>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        #board {
+            display: flex;
+            flex-wrap: wrap;
+            width: 50vw;
+            border: solid 1px black;
+            height: 100%;
+        }
+        .cell {
+            width: 10svw;
+            /* display: flex; */
+            height: 10svh;
+            /* justify-content: center; */
+            /* align-items: center; */
+            flex: 1 1 6vw;
+        }
+        .black {
+            background-color: #AB7A65;
+        }
+        .white {
+            background-color: rgba(238, 216, 192, 1);
+        }
+    </style>
+    <div id="board">
+        <slot></slot>
+    </div>
+</template>
+
+<template id="cell">
+    <style>
+
+    </style>
+</template>

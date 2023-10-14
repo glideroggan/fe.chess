@@ -1,0 +1,26 @@
+<template>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            user-select: none;
+        }
+        p {
+            position: absolute;
+        }
+        .cell {
+            width: 100%;
+            height: 100%;
+            /* keep aspect-ratio */
+            aspect-ratio: 1/1;   
+        }
+        .valid {
+            background-color: rgba(0, 255, 0, 0.5);
+        }
+    </style>
+    <div class="cell">
+        <p info></p>
+        <slot></slot>
+    </div>
+    
+</template>

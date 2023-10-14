@@ -1,0 +1,22 @@
+<template>
+    <style>
+        .piece {
+            position: absolute;
+            background-image: url('assets/images/pieces.png');
+            min-width: calc(5svw);
+            min-height: calc(10svh);
+            
+            background-size: calc(100% * 8) calc(100% * 2);
+            z-index: 1;
+            display: flex;
+        }
+        .pawn {
+            background-position: 75px 0;
+        }
+        .black {
+            /* TODO: we need to calculate the position based on the background-size */
+            background-position: 75px 60px;
+        }
+    </style>
+    <div class="piece pawn"></div>
+</template>
