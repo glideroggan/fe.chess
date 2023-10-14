@@ -51,25 +51,26 @@ export class BoardCell extends HTMLElement {
         const to = FenPos.parse(this.getAttribute('pos'))
         
         const success = movePiece(from, to)
+        this.dispatchEvent(new CustomEvent('moved', { detail: {from:from, to:to}, bubbles: true, composed: true }))    
 
         // TODO: read the FEN of this position and create the piece
-        const piece = boardState.getPiece(to)
-        if (piece != null) {
-            // clear any other piece in the cell
-            const oldPiece = this.querySelector('chess-piece')
-            if (oldPiece != null) {
-                oldPiece.remove()
-            }
+        // const piece = boardState.getPiece(to)
+        // if (piece != null) {
+        //     // clear any other piece in the cell
+        //     const oldPiece = this.querySelector('chess-piece')
+        //     if (oldPiece != null) {
+        //         oldPiece.remove()
+        //     }
 
-            // create a new piece in the new cell
-            const el = document.createElement('chess-piece')
-            el.setAttribute('pos', this.getAttribute('pos'))
-            el.setAttribute('color', piece.color)
-            el.setAttribute('frozen', 'true')
-            el.setAttribute('type', piece.type)
-            this.appendChild(el)
-            this.dispatchEvent(new Event('moved', { bubbles: true, composed: true }))    
-        }
+        //     // create a new piece in the new cell
+        //     const el = document.createElement('chess-piece')
+        //     el.setAttribute('pos', this.getAttribute('pos'))
+        //     el.setAttribute('color', piece.color)
+        //     el.setAttribute('frozen', 'true')
+        //     el.setAttribute('type', piece.type)
+        //     this.appendChild(el)
+            
+        // }
     }
     async connectedCallback() {
         const html = await import('./boardCell-template.html');

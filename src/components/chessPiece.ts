@@ -5,6 +5,7 @@ export class ChessPiece extends HTMLElement {
     root: ShadowRoot
     parser: DOMParser
     div: HTMLDivElement
+    initialized: boolean
     constructor() {
         super()
         this.root = this.attachShadow({ mode: 'closed' })
@@ -24,11 +25,11 @@ export class ChessPiece extends HTMLElement {
     onDragEnd(e: DragEvent) {
         e.preventDefault()
         // check board state if this should be removed
-        const p = FenPos.parse(this.getAttribute('pos'))
-        const piece = boardState.getPiece(p)
-        if (piece == null) {
-            this.remove()
-        }
+        // const p = FenPos.parse(this.getAttribute('pos'))
+        // const piece = boardState.getPiece(p)
+        // if (piece == null) {
+        //     this.remove()
+        // }
             
     }
     static get observedAttributes() {
@@ -42,6 +43,7 @@ export class ChessPiece extends HTMLElement {
         }
     }
     async connectedCallback() {
+        if (this.initialized) return
         const html = await import('./chessPiece-template.html');
         const doc = this.parser.parseFromString(html.default, 'text/html');
         const template: HTMLTemplateElement = doc.querySelector('template')
@@ -63,6 +65,9 @@ export class ChessPiece extends HTMLElement {
         // observe changes to the board state
         // when player changes, then if this piece is the same color, then enable drag
         boardState.onPlayerChange((color) => this.onPlayerChange.bind(this)(color))
+        this.initialized = true
+    }
+    async disconnectedCallback() {
     }
     attributeChangedCallback(name: string, oldValue: string, newValue: string) {
         if (name === 'frozen') {

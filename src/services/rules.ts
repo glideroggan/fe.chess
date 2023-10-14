@@ -70,7 +70,7 @@ const getPossibleMoves = (piece: Piece, kingCheck: boolean = true): FenPos[] => 
     return pMoves
 }
 
-const filterKingVulnerableMoves = (piece: Piece, moves: FenPos[]): {valid:FenPos[], danger:any} => {
+export const filterKingVulnerableMoves = (piece: Piece, moves: FenPos[]): {valid:FenPos[], danger:any} => {
     const validMoves:FenPos[] = []
     const dangerMoves:{from:FenPos,to:FenPos}[] = []
     for (const to of moves) {
@@ -119,12 +119,40 @@ export const getMovesTowards = (targetPos: FenPos, color: Color): {from:FenPos,t
     return moves
 }
 
+export const getAllPossibleMoves = ():{from:FenPos, to:FenPos}[] => {
+    const moves:{from:FenPos, to:FenPos}[] = []
+    const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    for (const rankSymbol of ranks) {
+        const rank = boardState.getRank(rankSymbol)
+        for (let x = 0; x < 8; x++) {
+            const p = rank[x]
+            if (isNaN(parseInt(p))) {
+                // piece
+                const piece:Piece = {
+                    color: p === p.toUpperCase() ? 'white' : 'black',
+                    type: p.toLowerCase() as PieceType,
+                    pos: new FenPos(rankSymbol, x)
+                }
+                if (piece.color == boardState.currentPlayer) {
+                    let arr = getPossibleMoves(piece, false)
+                    const results = filterKingVulnerableMoves(piece, arr)
+                    results.valid.forEach((pos) => moves.push({from:piece.pos,to:pos}))
+                }
+            }
+        }    
+    }
+    
+    return moves
+}
+
 
 export const movePiece = (from: FenPos, to: FenPos): boolean => {
     boardState.move(from, to)
+
     boardState.playerChangeObservers.forEach((callback) => {
         callback(boardState.currentPlayer);
     });
+    console.log('move:', from.toString(), '->', to.toString())
     console.log(boardState.toString())
 
     movingPiece = null

@@ -6,3 +6,4 @@ import { ChessTable } from './components/chessTable'
 
 
 const board:ChessTable = document.querySelector('chess-table')
+board.ai = true

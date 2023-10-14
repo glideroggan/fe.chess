@@ -1,4 +1,5 @@
-import { Piece, boardState, resetBoard } from '../services/rules';
+import { aiMove } from '../services/ai';
+import { Piece, boardState, movePiece, resetBoard } from '../services/rules';
 import { FenPos, Pos, pos2Fen } from '../services/utils';
 import { BoardCell } from './boardCell';
 import { ChessPiece } from './chessPiece';
@@ -46,8 +47,14 @@ export class ChessTable extends HTMLElement {
 
         this.dispatchEvent(new Event('done'))
     }
-    onMoved() {
-        // TODO: we should check if a king is in check, and mark that cell
+    set ai(value: boolean) {
+        if (value) {
+            this.setAttribute('ai', 'true')
+        } else {
+            this.setAttribute('ai', 'false')
+        }
+    }
+    doKingCheck() {
         const check = boardState.isCheck()
         if (check != null) {
             const cell = this.root.querySelector(`.cell[pos=${check.toString()}]`)
@@ -56,6 +63,32 @@ export class ChessTable extends HTMLElement {
             const cell = this.root.querySelector(`.cell.check`)
             if (cell != null) {
                 cell.classList.remove('check')
+            }
+        }
+    }
+    onMoved(moveEvent: CustomEvent) {
+        // TODO: we should check if a king is in check, and mark that cell
+        this.doKingCheck()
+        // update UI
+        const fromCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.from.toString()}]`)
+        const toCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.to.toString()}]`)
+        // remove the piece from the old cell
+        const targetPiece = toCell.querySelector('chess-piece')
+        if (targetPiece != null) {
+            targetPiece.remove()
+        }
+        const piece = fromCell.querySelector('chess-piece')
+        piece.setAttribute('pos', moveEvent.detail.to.toString())
+        toCell.appendChild(piece)
+
+        // make a AI move if AI is enabled
+        if (this.getAttribute('ai') === 'true' && boardState.currentPlayer === 'black') {
+            const move = aiMove()
+            if (move != null) {
+                movePiece(move.from, move.to)
+                this.onMoved(new CustomEvent('moved', { detail: { from: move.from, to: move.to }, bubbles: true, composed: true }))
+            } else {
+                this.doKingCheck()
             }
         }
     }
@@ -83,7 +116,7 @@ export class ChessTable extends HTMLElement {
                     const cell = this.root.querySelector('#board').querySelector(`.cell[pos=${pos}]`)
                     cell.appendChild(el)
                 }
-            }    
+            }
         })
     }
 
