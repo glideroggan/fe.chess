@@ -1,4 +1,4 @@
-import { resetBoard } from '../services/rules';
+import { Piece, boardState, resetBoard } from '../services/rules';
 import { FenPos, Pos, pos2Fen } from '../services/utils';
 import { BoardCell } from './boardCell';
 import { ChessPiece } from './chessPiece';
@@ -20,7 +20,6 @@ export class ChessTable extends HTMLElement {
 
         // create all the cells in a template and connect to the "board"
         // const board = document.createElement('template')
-        // const cellTemplate:HTMLTemplateElement = doc.querySelector('#cell')
         const table = this.root.querySelector('#board')
         let black = true
         for (let y = 7; y >= 0; y--) {
@@ -49,6 +48,26 @@ export class ChessTable extends HTMLElement {
     }
     onMoved() {
         console.log('moved')
+        // TODO: we should check if a king is in check, and mark that cell
+        const check = boardState.isCheck()
+        console.log('check', check)
+        if (check != null) {
+            const cell = this.root.querySelector(`.cell[pos=${check.toString()}]`)
+            cell.classList.add('check')
+        } else {
+            const cell = this.root.querySelector(`.cell.check`)
+            if (cell != null) {
+                cell.classList.remove('check')
+            }
+        }
+    }
+    createPiece(piece: Piece, frozen: boolean): ChessPiece {
+        const el = document.createElement('chess-piece') as ChessPiece
+        el.setAttribute('color', piece.color)
+        el.setAttribute('type', piece.type)
+        el.setAttribute('pos', piece.pos.toString())
+        el.setAttribute('frozen', frozen.toString())
+        return el
     }
     setup() {
         console.log('setup')
@@ -56,29 +75,25 @@ export class ChessTable extends HTMLElement {
 
         // TODO: this should use the board state to place pieces
         // pawns
-        
-        for (let x = 0; x < 8; x++) {
-            const pawn = document.createElement('chess-piece') as ChessPiece
-            pawn.setAttribute('color', 'white')
-            pawn.setAttribute('frozen', 'false')
-            pawn.setAttribute('type', 'pawn')
-            const fenPos = new FenPos('b', x).toString()
-            pawn.setAttribute('pos', fenPos)
-            const cell = this.root.querySelector('#board').querySelector(`.cell[pos=${fenPos}]`)
-            cell.appendChild(pawn)
-        }
-        for (let x = 0; x < 8; x++) {
-            const pawn = document.createElement('chess-piece') as ChessPiece
-            pawn.setAttribute('color', 'black')
-            pawn.setAttribute('frozen', 'true')
-            pawn.setAttribute('type', 'pawn')
-            const fenPos = new FenPos('g', x).toString()
-            pawn.setAttribute('pos', fenPos)
-            const cell = this.root.querySelector('#board').querySelector(`.cell[pos=${fenPos}]`)
-            cell.appendChild(pawn)
-        }
+        const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        ranks.forEach((rankSymbol) => {
+            const rank = boardState.getRank(rankSymbol)
+            for (let x = 0; x < 8; x++) {
+                const p = rank[x]
+                if (isNaN(parseInt(p))) {
+                    // piece
+                    const pos = new FenPos(rankSymbol, x)
+                    const piece = boardState.getPiece(pos)
+                    const el = this.createPiece(piece, piece.color !== boardState.currentPlayer)
+                    const cell = this.root.querySelector('#board').querySelector(`.cell[pos=${pos}]`)
+                    cell.appendChild(el)
+                }
+            }    
+        })
     }
 
 }
 
 customElements.define('chess-table', ChessTable)
+
+

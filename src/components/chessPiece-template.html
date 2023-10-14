@@ -1,22 +1,69 @@
 <template>
     <style>
+        :host {
+            --width: calc(100vw / 8);
+            --height: 100%;
+            --offsetX: 0;
+            --offsetY: 20px;
+            --white-pawn-image: url('assets/images/white-pawn.png');
+            --white-rook-image: url('assets/images/white-rook.png');
+            --white-knight-image: url('assets/images/white-horse.png');
+            --white-bishop-image: url('assets/images/white-bishop.png');
+            --white-queen-image: url('assets/images/white-queen.png');
+            --white-king-image: url('assets/images/white-king.png');
+            --black-pawn-image: url('assets/images/black-pawn.png');
+            --black-rook-image: url('assets/images/black-rook.png');
+            --black-knight-image: url('assets/images/black-horse.png');
+            --black-bishop-image: url('assets/images/black-bishop.png');
+            --black-queen-image: url('assets/images/black-queen.png');
+            --black-king-image: url('assets/images/black-king.png');
+        }
         .piece {
-            position: absolute;
-            background-image: url('assets/images/pieces.png');
-            min-width: calc(5svw);
-            min-height: calc(10svh);
+            position: relative;
             
-            background-size: calc(100% * 8) calc(100% * 2);
+            /* min-width: var(--width); */
+            min-height: var(--height);
+            background-size: contain;
             z-index: 1;
+            aspect-ratio: 1/1;
             display: flex;
         }
-        .pawn {
-            background-position: 75px 0;
+        .k {
+            background-image: var(--white-king-image);
         }
-        .black {
-            /* TODO: we need to calculate the position based on the background-size */
-            background-position: 75px 60px;
+        .K {
+            background-image: var(--black-king-image);
+        }
+        .q {
+            background-image: var(--white-queen-image);
+        }
+        .Q {
+            background-image: var(--black-queen-image);
+        }
+        .n {
+            background-image: var(--white-knight-image);
+        }
+        .N {
+            background-image: var(--black-knight-image);
+        }
+        .p {
+            background-image: var(--white-pawn-image);
+        }
+        .P {
+            background-image: var(--black-pawn-image);
+        }
+        .r {
+            background-image: var(--white-rook-image);
+        }
+        .R {
+            background-image: var(--black-rook-image);
+        }
+        .b {
+            background-image: var(--white-bishop-image);
+        }
+        .B {
+            background-image: var(--black-bishop-image);
         }
     </style>
-    <div class="piece pawn"></div>
+    <div class="piece"></div>
 </template>

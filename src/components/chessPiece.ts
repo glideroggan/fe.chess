@@ -1,4 +1,4 @@
-import { boardState, lastMove, startMoving } from '../services/rules'
+import { boardState, startMoving } from '../services/rules'
 import { FenPos } from '../services/utils'
 
 export class ChessPiece extends HTMLElement {
@@ -16,10 +16,22 @@ export class ChessPiece extends HTMLElement {
         const p = FenPos.parse(this.getAttribute('pos'))
         startMoving(p)
     }
+    onTouchStart(e: TouchEvent) {
+        e.preventDefault()
+        const p = FenPos.parse(this.getAttribute('pos'))
+        startMoving(p)
+    }
     onDragEnd(e: DragEvent) {
-        if (lastMove != null) {
+        console.log('onDragEnd')
+        e.preventDefault()
+        // check board state if this should be removed
+        const p = FenPos.parse(this.getAttribute('pos'))
+        const piece = boardState.getPiece(p)
+        if (piece == null) {
+            console.log('remove piece', boardState.toString())
             this.remove()
         }
+            
     }
     static get observedAttributes() {
         return ['frozen']
@@ -42,9 +54,13 @@ export class ChessPiece extends HTMLElement {
 
         // this.div.draggable = true
         this.div.addEventListener('dragstart', this.onDragStart.bind(this))
+        this.div.addEventListener('touchstart', this.onTouchStart.bind(this))
         this.div.addEventListener('dragend', this.onDragEnd.bind(this))
 
         this.div.draggable = this.getAttribute('frozen') !== 'true'
+        const t = this.getAttribute('color') === 'white' 
+            ? this.getAttribute('type').toLowerCase() : this.getAttribute('type').toUpperCase()
+        this.div.classList.add(t)
 
         // observe changes to the board state
         // when player changes, then if this piece is the same color, then enable drag

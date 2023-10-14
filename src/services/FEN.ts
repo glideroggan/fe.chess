@@ -1,5 +1,5 @@
 import { FenPos } from "./utils";
-import { boardState, Color, Piece, PieceType } from "./rules";
+import { boardState, Color, getMovesTowards, Piece, PieceType } from "./rules";
 
 export const expandRank = (rank: string): string => {
     let expandedRank = ''
@@ -42,12 +42,20 @@ export const compressRank = (rank: string): string => {
 type PlayerChangeFunction = (color: Color) => void
 
 export class FEN {
+    
+    
+    
     current: string;
+    history: string[] = [];
+    
     constructor(fen: string) {
         this.current = fen;
     }
     static parse(fen: string): FEN {
         return new FEN(fen);
+    }
+    get currentPlayer(): Color {
+        return this.current.split(' ')[1] === 'w' ? 'white' : 'black'
     }
     toString(): string {
         return this.current;
@@ -56,7 +64,38 @@ export class FEN {
     onPlayerChange(callback: PlayerChangeFunction) {
         this.playerChangeObservers.push(callback);
     }
+    isCheck():FenPos {
+        let kingPos = boardState.getKing('white')
+        let possibleMoves = getMovesTowards(kingPos, 'black')
+        if (possibleMoves.length > 0) {
+            return kingPos
+        }
+        kingPos = boardState.getKing('black')
+        possibleMoves = getMovesTowards(kingPos, 'white')
+        if (possibleMoves.length > 0) {
+            return kingPos
+        }
+        return null
+    }
+    undo() {
+        console.log('before pop', this.history)
+        this.current = this.history.pop();
+        console.log('after pop', this.history)
+    }
+    getKing(player: Color) {
+        const char = player === 'white' ? 'K' : 'k'
+        const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+        for (const rankSymbol of ranks) {
+            const rank = this.getRank(rankSymbol)
+            if (rank.indexOf(char) !== -1) {
+                const file = rank.indexOf(char)
+                return new FenPos(rankSymbol, file)
+            }
+        }
+    }
     move(from: FenPos, to: FenPos) {
+        this.history.push(this.current);
+        // console.log('history', this.history)
         // change player turn
         this.togglePlayerTurn();
 
@@ -71,20 +110,17 @@ export class FEN {
         // update to position
         rank = this.getRank(to.rank);
         expandedRank = expandRank(rank);
-        expandedRank = expandedRank.slice(0, from.file) + char + expandedRank.slice(from.file + 1);
+        expandedRank = expandedRank.slice(0, to.file) + char + expandedRank.slice(to.file + 1);
         compressedRank = compressRank(expandedRank);
         boardState.updateRank(to.rank, compressedRank);
     }
     togglePlayerTurn() {
+        console.log('toggle player turn')
         const a = this.current.split(' ')
         let b = a[1]
         b = b === 'w' ? 'b' : 'w'
         a[1] = b
         this.current = a.join(' ');
-        this.playerChangeObservers.forEach((callback) => {
-            callback(b === 'w' ? 'white' : 'black');
-        });
-
         if (b === 'w')
             this.increaseFullmoveNumber();
     }
@@ -106,12 +142,16 @@ export class FEN {
     }
     getPiece(pos: FenPos): Piece {
         // look into the FEN and return the piece at the given position
-        const row = this.getRank(pos.rank);
+        const rank = this.getRank(pos.rank);
+        // console.log(rank)
         // the row can either contain a character, which means that, that position is occupied
         // by a piece, or it can contain a number, which means that, that many positions are empty
-        const rank = expandRank(row)
-        return rank[pos.file] === '1' ? null : {
-            color: rank[pos.file] === rank[pos.file].toUpperCase() ? 'white' : 'black',
+        // const rank = expandRank(row)
+        if (rank[pos.file] == '1') return null
+        // console.log('file:', pos.file, 'to:', rank[pos.file])
+        const color = rank[pos.file] == rank[pos.file].toUpperCase() ? 'white' : 'black'
+        return  {
+            color: color,
             type: rank[pos.file].toLowerCase() as PieceType,
             pos: new FenPos(pos.rank, pos.file)
         }
@@ -121,6 +161,6 @@ export class FEN {
         const b = a.split('/');
         // invert the order of the array, so that the first row is at the bottom
         b.reverse();
-        return b[rank.charCodeAt(0) - 97];
+        return expandRank(b[rank.charCodeAt(0) - 97])
     }
 }

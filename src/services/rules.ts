@@ -1,13 +1,12 @@
 import { FEN } from "./FEN"
-import { getPawnMoves } from "./pieceMoves"
+import { getBishopMoves, getKingMoves, getKnightMoves, getPawnMoves, getQueenMoves, getRookMoves } from "./pieceMoves"
 import { FenPos } from "./utils"
 
-export let boardState:FEN
-export let movingPiece:Piece
-export let lastMove:Piece
+export let boardState: FEN
+export let movingPiece: Piece
 
 export type Color = 'white' | 'black'
-export type PieceType = 'p' | 'r' | 'k' | 'b' | 'q' | 'k'
+export type PieceType = 'p' | 'r' | 'n' | 'b' | 'q' | 'k'
 
 export type Piece = {
     color: Color
@@ -26,7 +25,12 @@ export const resetBoard = () => {
 
 export const validMove = (from: FenPos, to: FenPos): boolean => {
     // check if valid move for piece
-    console.log('validMove', from.toString(),'->', to.toString())
+    console.log('check move', from.toString(), '->', to.toString())
+    const toPiece = boardState.getPiece(to)
+    // console.log('toPiece', toPiece)
+    if (toPiece != null && toPiece.color === boardState.currentPlayer) {
+        return false
+    }
     const piece = boardState.getPiece(from)
     // console.log(piece)
     if (piece != null) {
@@ -39,29 +43,95 @@ export const validMove = (from: FenPos, to: FenPos): boolean => {
     return false
 }
 
-const getPossibleMoves = (piece:Piece):FenPos[] => {
-    const pMoves = []
+const getPossibleMoves = (piece: Piece, kingCheck: boolean = true): FenPos[] => {
+    let pMoves = []
     switch (piece.type) {
         case 'p':
-            return getPawnMoves(piece.color, piece.pos)
+            pMoves = getPawnMoves(piece.color, piece.pos)
+            break
+        case 'r':
+            pMoves = getRookMoves(piece.color, piece.pos)
+            break
+        case 'n':
+            pMoves = getKnightMoves(piece.color, piece.pos)
+            break
+        case 'b':
+            pMoves = getBishopMoves(piece.color, piece.pos)
+            break
+        case 'q':
+            pMoves = getQueenMoves(piece.color, piece.pos)
+            break
+        case 'k':
+            pMoves = getKingMoves(piece.color, piece.pos)
+            break
     }
-    // TODO: before leaving here, we should check that this new state doesn't
-    // put the king in check
+    // check that all moves returned do not put the king in check
+    if (kingCheck) {
+        const results = filterKingVulnerableMoves(piece, pMoves)
+        // console.log('results', results)
+        pMoves = results.valid
+    }
+    return pMoves
+}
+
+const filterKingVulnerableMoves = (piece: Piece, moves: FenPos[]): {valid:FenPos[], danger:any} => {
+    const validMoves:FenPos[] = []
+    const dangerMoves:{from:FenPos,to:FenPos}[] = []
+    for (const to of moves) {
+        // put the board in a place when the move is made
+        // then check if the king is in check
+        // if it not, then the move is valid
+        boardState.move(piece.pos, to)
+
+        // check if king is in check
+        const kingPos = boardState.getKing(piece.color)
+        const possibleMoves = getMovesTowards(kingPos, boardState.currentPlayer)
+        if (possibleMoves.length > 0) {
+            boardState.undo()
+            dangerMoves.push(...possibleMoves)
+            continue
+        }
+        boardState.undo()
+        validMoves.push(to)
+    }
+    return {valid:validMoves, danger:dangerMoves}
+}
+
+export const getMovesTowards = (targetPos: FenPos, color: Color): {from:FenPos,to:FenPos}[] => {
+    // go through whole board and check valid moves against this position
+    const moves:{from:FenPos,to:FenPos}[] = []
+    const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    for (const rankSymbol of ranks) {
+        const rank = boardState.getRank(rankSymbol)
+        for (let x = 0; x < 8; x++) {
+            const p = rank[x]
+            if (isNaN(parseInt(p))) {
+                // piece
+                const piece:Piece = {
+                    color: p === p.toUpperCase() ? 'white' : 'black',
+                    type: p.toLowerCase() as PieceType,
+                    pos: new FenPos(rankSymbol, x)
+                }
+                if (piece.color == color) {
+                    let arr = getPossibleMoves(piece, false)
+                    arr = arr.filter((pos) => pos.equals(targetPos))
+                    arr.forEach((pos) => moves.push({from:piece.pos,to:pos}))
+                }
+            }
+        }    
+    }
+    return moves
 }
 
 
 export const movePiece = (from: FenPos, to: FenPos): boolean => {
-    // update board state
-    if (!validMove(from, to)) {
-        lastMove = null
-        movingPiece = null
-        return false
-    } 
-
     boardState.move(from, to)
+    boardState.playerChangeObservers.forEach((callback) => {
+        callback(boardState.currentPlayer);
+    });
     console.log(boardState.toString())
+    console.log(boardState.history)
 
-    lastMove = movingPiece
     movingPiece = null
     return true
 }

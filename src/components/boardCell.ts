@@ -1,4 +1,4 @@
-import { lastMove, movePiece, movingPiece, validMove } from '../services/rules'
+import { boardState, movePiece, movingPiece, validMove } from '../services/rules'
 import { FenPos } from '../services/utils'
 
 export class BoardCell extends HTMLElement {
@@ -31,6 +31,10 @@ export class BoardCell extends HTMLElement {
         // what is the position of this cell?
         
         // what is the current position of the piece?
+        // if (movingPiece == null) {
+        //     console.error('onDragOver: movingPiece is null')
+        //     return
+        // }
         if (cellPos.equals(movingPiece.pos)) {
             this.cell.classList.remove('valid')
             return
@@ -41,26 +45,43 @@ export class BoardCell extends HTMLElement {
         }
     }
     onDrop(e: DragEvent) {
+        console.log('onDrop')
+        if (!this.cell.classList.contains('valid')) {
+            console.log('not valid')
+            this.entered = false
+            return;
+        }
         this.cell.classList.remove('valid')
         this.entered = false
         // move the piece to the new cell
-        const success = movePiece(movingPiece.pos, FenPos.parse(this.getAttribute('pos')))
-        if (success) {
-            console.log('moved', lastMove.pos.toString(), '->', this.getAttribute('pos'))
-            // remove any enemy piece in the new cell
-            let piece = this.querySelector('chess-piece')
-            console.log('piece', piece)
-            if (piece != null) {
-                piece.remove()
+        if (movingPiece == null) {
+            console.error('onDrop: movingPiece is null')
+            return
+        }
+        const from = movingPiece.pos
+        const to = FenPos.parse(this.getAttribute('pos'))
+        
+        const success = movePiece(from, to)
+
+        // TODO: read the FEN of this position and create the piece
+        const piece = boardState.getPiece(to)
+        if (piece != null) {
+            console.log('onDrop: piece is not null', piece)
+            // clear any other piece in the cell
+            const oldPiece = this.querySelector('chess-piece')
+            if (oldPiece != null) {
+                console.log('onDrop: removing old piece', oldPiece)
+                oldPiece.remove()
             }
 
             // create a new piece in the new cell
-            piece = document.createElement('chess-piece')
-            piece.setAttribute('pos', this.getAttribute('pos'))
-            piece.setAttribute('color', lastMove.color)
-            piece.setAttribute('frozen', 'true')
-            this.appendChild(piece)
-            this.dispatchEvent(new Event('moved', { bubbles: true, composed: true }))
+            const el = document.createElement('chess-piece')
+            el.setAttribute('pos', this.getAttribute('pos'))
+            el.setAttribute('color', piece.color)
+            el.setAttribute('frozen', 'true')
+            el.setAttribute('type', piece.type)
+            this.appendChild(el)
+            this.dispatchEvent(new Event('moved', { bubbles: true, composed: true }))    
         }
     }
     async connectedCallback() {
@@ -71,7 +92,7 @@ export class BoardCell extends HTMLElement {
 
         this.cell = this.root.querySelector('div')
         this.info = this.root.querySelector('[info]')
-        this.info.innerHTML = this.getAttribute('pos')
+        // this.info.innerHTML = this.getAttribute('pos')
         // Continue here, adding the event listeners for drag and drop
         this.cell.addEventListener('dragover', this.onDragOver.bind(this))
         // TODO: need a listener for leaving the cell
