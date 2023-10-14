@@ -198,11 +198,12 @@ export const getPawnMoves = (color: Color, pos: FenPos): FenPos[] => {
     /*Pawn
         [ ] Passant
     */
+    // TODO: fix mess
     let moves: FenPos[] = []
     const pawnMoves: Move[] = [
-        { forward: 1, file: 0, attackMove: false }, 
-        { forward: 2, file: 0, attackMove: false, startMove: true }, 
-        { forward: 1, file: -1, attackMove: true }, 
+        { forward: 1, file: 0, attackMove: false },
+        { forward: 2, file: 0, attackMove: false, startMove: true },
+        { forward: 1, file: -1, attackMove: true },
         { forward: 1, file: 1, attackMove: true }]
     for (const move of pawnMoves) {
         const forward = color == 'white' ? move.forward : -move.forward
@@ -218,8 +219,17 @@ export const getPawnMoves = (color: Color, pos: FenPos): FenPos[] => {
             }
         } else if (piece == null) {
             if (move.startMove) {
-                if (pos.rank == 'b' || pos.rank == 'g') {
-                    moves.push(newPos)
+                if (pos.rank == 'b') {
+                    // no jumps allowed
+                    const p = boardState.getPiece(new FenPos(String.fromCharCode(pos.rank.charCodeAt(0) + 1), pos.file))
+                    if (p == null) {
+                        moves.push(newPos)
+                    }
+                } else if (pos.rank == 'g') {
+                    const p = boardState.getPiece(new FenPos(String.fromCharCode(pos.rank.charCodeAt(0) - 1), pos.file))
+                    if (p == null) {
+                        moves.push(newPos)
+                    }
                 }
             } else {
                 moves.push(newPos)

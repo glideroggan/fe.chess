@@ -52,25 +52,6 @@ export class BoardCell extends HTMLElement {
         
         const success = movePiece(from, to)
         this.dispatchEvent(new CustomEvent('moved', { detail: {from:from, to:to}, bubbles: true, composed: true }))    
-
-        // TODO: read the FEN of this position and create the piece
-        // const piece = boardState.getPiece(to)
-        // if (piece != null) {
-        //     // clear any other piece in the cell
-        //     const oldPiece = this.querySelector('chess-piece')
-        //     if (oldPiece != null) {
-        //         oldPiece.remove()
-        //     }
-
-        //     // create a new piece in the new cell
-        //     const el = document.createElement('chess-piece')
-        //     el.setAttribute('pos', this.getAttribute('pos'))
-        //     el.setAttribute('color', piece.color)
-        //     el.setAttribute('frozen', 'true')
-        //     el.setAttribute('type', piece.type)
-        //     this.appendChild(el)
-            
-        // }
     }
     async connectedCallback() {
         const html = await import('./boardCell-template.html');
@@ -80,7 +61,7 @@ export class BoardCell extends HTMLElement {
 
         this.cell = this.root.querySelector('div')
         this.info = this.root.querySelector('[info]')
-        // this.info.innerHTML = this.getAttribute('pos')
+        this.info.innerHTML = this.getAttribute('pos')
         // Continue here, adding the event listeners for drag and drop
         this.cell.addEventListener('dragover', this.onDragOver.bind(this))
         // TODO: need a listener for leaving the cell

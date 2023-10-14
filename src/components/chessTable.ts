@@ -34,8 +34,6 @@ export class ChessTable extends HTMLElement {
                 } else {
                     cell.classList.add('white')
                 }
-                // cell.dataset.x = x.toString()
-                // cell.dataset.y = y.toString()
                 table.appendChild(cell)
                 // board.content.appendChild(cell)
                 black = !black
@@ -56,19 +54,20 @@ export class ChessTable extends HTMLElement {
     }
     doKingCheck() {
         const check = boardState.isCheck()
-        if (check != null) {
-            const cell = this.root.querySelector(`.cell[pos=${check.toString()}]`)
-            cell.classList.add('check')
+        console.log('check:', check)
+        if (check.length > 0) {
+            for (const pos in check) {
+                const cell = this.root.querySelector(`.cell[pos=${check.toString()}]`)
+                cell.classList.add('check')
+            }
         } else {
-            const cell = this.root.querySelector(`.cell.check`)
-            if (cell != null) {
+            const cells = this.root.querySelectorAll(`.cell.check`)
+            for (const cell of cells) {
                 cell.classList.remove('check')
             }
         }
     }
-    onMoved(moveEvent: CustomEvent) {
-        // TODO: we should check if a king is in check, and mark that cell
-        this.doKingCheck()
+    async onMoved(moveEvent: CustomEvent) {
         // update UI
         const fromCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.from.toString()}]`)
         const toCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.to.toString()}]`)
@@ -81,15 +80,22 @@ export class ChessTable extends HTMLElement {
         piece.setAttribute('pos', moveEvent.detail.to.toString())
         toCell.appendChild(piece)
 
+        this.doKingCheck()
+
         // make a AI move if AI is enabled
         if (this.getAttribute('ai') === 'true' && boardState.currentPlayer === 'black') {
-            const move = aiMove()
-            if (move != null) {
-                movePiece(move.from, move.to)
-                this.onMoved(new CustomEvent('moved', { detail: { from: move.from, to: move.to }, bubbles: true, composed: true }))
-            } else {
-                this.doKingCheck()
-            }
+            // TODO: is it possible to make this happen in the background?
+            // so that the UI is not blocked
+            // is it possible to dispatch an event that is handled and then we catch
+            // that when done?
+            aiMove(3, false).then((move) => {
+                if (move != null) {
+                    movePiece(move.from, move.to)
+                    this.onMoved(new CustomEvent('moved', { detail: { from: move.from, to: move.to }, bubbles: true, composed: true }))
+                } else {
+                    this.doKingCheck()
+                }
+            })
         }
     }
     createPiece(piece: Piece, frozen: boolean): ChessPiece {

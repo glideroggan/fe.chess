@@ -81,7 +81,7 @@ export const filterKingVulnerableMoves = (piece: Piece, moves: FenPos[]): {valid
 
         // check if king is in check
         const kingPos = boardState.getKing(piece.color)
-        const possibleMoves = getMovesTowards(kingPos, boardState.currentPlayer)
+        const possibleMoves = getMovesTowards(kingPos)
         if (possibleMoves.length > 0) {
             boardState.undo()
             dangerMoves.push(...possibleMoves)
@@ -93,8 +93,9 @@ export const filterKingVulnerableMoves = (piece: Piece, moves: FenPos[]): {valid
     return {valid:validMoves, danger:dangerMoves}
 }
 
-export const getMovesTowards = (targetPos: FenPos, color: Color): {from:FenPos,to:FenPos}[] => {
+export const getMovesTowards = (targetPos: FenPos): {from:FenPos,to:FenPos}[] => {
     // go through whole board and check valid moves against this position
+    const color = boardState.getPiece(targetPos).color
     const moves:{from:FenPos,to:FenPos}[] = []
     const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     for (const rankSymbol of ranks) {
@@ -108,7 +109,7 @@ export const getMovesTowards = (targetPos: FenPos, color: Color): {from:FenPos,t
                     type: p.toLowerCase() as PieceType,
                     pos: new FenPos(rankSymbol, x)
                 }
-                if (piece.color == color) {
+                if (piece.color != color) {
                     let arr = getPossibleMoves(piece, false)
                     arr = arr.filter((pos) => pos.equals(targetPos))
                     arr.forEach((pos) => moves.push({from:piece.pos,to:pos}))

@@ -64,18 +64,19 @@ export class FEN {
     onPlayerChange(callback: PlayerChangeFunction) {
         this.playerChangeObservers.push(callback);
     }
-    isCheck():FenPos {
+    isCheck():FenPos[] {
+        let res = []
         let kingPos = boardState.getKing('white')
-        let possibleMoves = getMovesTowards(kingPos, 'black')
+        let possibleMoves = getMovesTowards(kingPos)
         if (possibleMoves.length > 0) {
-            return kingPos
+            res.push(kingPos)
         }
         kingPos = boardState.getKing('black')
-        possibleMoves = getMovesTowards(kingPos, 'white')
+        possibleMoves = getMovesTowards(kingPos)
         if (possibleMoves.length > 0) {
-            return kingPos
+            res.push(kingPos)
         }
-        return null
+        return []
     }
     undo() {
         this.current = this.history.pop();
