@@ -25,14 +25,11 @@ export const resetBoard = () => {
 
 export const validMove = (from: FenPos, to: FenPos): boolean => {
     // check if valid move for piece
-    console.log('check move', from.toString(), '->', to.toString())
     const toPiece = boardState.getPiece(to)
-    // console.log('toPiece', toPiece)
     if (toPiece != null && toPiece.color === boardState.currentPlayer) {
         return false
     }
     const piece = boardState.getPiece(from)
-    // console.log(piece)
     if (piece != null) {
         const arr = getPossibleMoves(piece)
         if (arr.find((pos) => pos.equals(to))) {
@@ -68,7 +65,6 @@ const getPossibleMoves = (piece: Piece, kingCheck: boolean = true): FenPos[] => 
     // check that all moves returned do not put the king in check
     if (kingCheck) {
         const results = filterKingVulnerableMoves(piece, pMoves)
-        // console.log('results', results)
         pMoves = results.valid
     }
     return pMoves
@@ -130,7 +126,6 @@ export const movePiece = (from: FenPos, to: FenPos): boolean => {
         callback(boardState.currentPlayer);
     });
     console.log(boardState.toString())
-    console.log(boardState.history)
 
     movingPiece = null
     return true

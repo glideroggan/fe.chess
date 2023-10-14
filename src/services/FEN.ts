@@ -78,9 +78,7 @@ export class FEN {
         return null
     }
     undo() {
-        console.log('before pop', this.history)
         this.current = this.history.pop();
-        console.log('after pop', this.history)
     }
     getKing(player: Color) {
         const char = player === 'white' ? 'K' : 'k'
@@ -95,7 +93,6 @@ export class FEN {
     }
     move(from: FenPos, to: FenPos) {
         this.history.push(this.current);
-        // console.log('history', this.history)
         // change player turn
         this.togglePlayerTurn();
 
@@ -115,7 +112,6 @@ export class FEN {
         boardState.updateRank(to.rank, compressedRank);
     }
     togglePlayerTurn() {
-        console.log('toggle player turn')
         const a = this.current.split(' ')
         let b = a[1]
         b = b === 'w' ? 'b' : 'w'
@@ -143,12 +139,10 @@ export class FEN {
     getPiece(pos: FenPos): Piece {
         // look into the FEN and return the piece at the given position
         const rank = this.getRank(pos.rank);
-        // console.log(rank)
         // the row can either contain a character, which means that, that position is occupied
         // by a piece, or it can contain a number, which means that, that many positions are empty
         // const rank = expandRank(row)
         if (rank[pos.file] == '1') return null
-        // console.log('file:', pos.file, 'to:', rank[pos.file])
         const color = rank[pos.file] == rank[pos.file].toUpperCase() ? 'white' : 'black'
         return  {
             color: color,

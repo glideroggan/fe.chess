@@ -47,10 +47,8 @@ export class ChessTable extends HTMLElement {
         this.dispatchEvent(new Event('done'))
     }
     onMoved() {
-        console.log('moved')
         // TODO: we should check if a king is in check, and mark that cell
         const check = boardState.isCheck()
-        console.log('check', check)
         if (check != null) {
             const cell = this.root.querySelector(`.cell[pos=${check.toString()}]`)
             cell.classList.add('check')
@@ -70,11 +68,8 @@ export class ChessTable extends HTMLElement {
         return el
     }
     setup() {
-        console.log('setup')
         resetBoard()
 
-        // TODO: this should use the board state to place pieces
-        // pawns
         const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
         ranks.forEach((rankSymbol) => {
             const rank = boardState.getRank(rankSymbol)

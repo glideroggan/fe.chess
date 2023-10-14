@@ -22,13 +22,11 @@ export class ChessPiece extends HTMLElement {
         startMoving(p)
     }
     onDragEnd(e: DragEvent) {
-        console.log('onDragEnd')
         e.preventDefault()
         // check board state if this should be removed
         const p = FenPos.parse(this.getAttribute('pos'))
         const piece = boardState.getPiece(p)
         if (piece == null) {
-            console.log('remove piece', boardState.toString())
             this.remove()
         }
             

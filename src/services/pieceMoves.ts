@@ -7,6 +7,7 @@ type Move = {
     attackMove?: boolean
     continously?: boolean
     jump?: boolean
+    startMove?: boolean
 }
 
 export const getKingMoves = (color: Color, pos: FenPos): FenPos[] => {
@@ -195,19 +196,12 @@ const isOutsideBoard = (pos: FenPos): boolean => {
 
 export const getPawnMoves = (color: Color, pos: FenPos): FenPos[] => {
     /*Pawn
-        [X] White
-        [X] Black
-        [X] 1 or 2 steps forward
-            2 steps only if it's the first move
-            1 step if nothing is blocking
-        [X] 1 up and left, if there's an enemy piece
-        [X] 1 up and right, if there's an enemy piece
         [ ] Passant
     */
     let moves: FenPos[] = []
     const pawnMoves: Move[] = [
         { forward: 1, file: 0, attackMove: false }, 
-        { forward: 2, file: 0, attackMove: false }, 
+        { forward: 2, file: 0, attackMove: false, startMove: true }, 
         { forward: 1, file: -1, attackMove: true }, 
         { forward: 1, file: 1, attackMove: true }]
     for (const move of pawnMoves) {
@@ -223,7 +217,13 @@ export const getPawnMoves = (color: Color, pos: FenPos): FenPos[] => {
                 moves.push(newPos)
             }
         } else if (piece == null) {
-            moves.push(newPos)
+            if (move.startMove) {
+                if (pos.rank == 'b' || pos.rank == 'g') {
+                    moves.push(newPos)
+                }
+            } else {
+                moves.push(newPos)
+            }
         }
     }
     return moves

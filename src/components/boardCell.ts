@@ -24,17 +24,8 @@ export class BoardCell extends HTMLElement {
         e.preventDefault()
         if (this.entered) return
         this.entered = true
-        // we can't use the data in the transfer during dragover
-        // but we could check with the board state and set the values there
         const cellPos:FenPos = FenPos.parse(this.getAttribute('pos'))
-        // TODO: if ok move, tint green, otherwise tint red
-        // what is the position of this cell?
         
-        // what is the current position of the piece?
-        // if (movingPiece == null) {
-        //     console.error('onDragOver: movingPiece is null')
-        //     return
-        // }
         if (cellPos.equals(movingPiece.pos)) {
             this.cell.classList.remove('valid')
             return
@@ -45,9 +36,7 @@ export class BoardCell extends HTMLElement {
         }
     }
     onDrop(e: DragEvent) {
-        console.log('onDrop')
         if (!this.cell.classList.contains('valid')) {
-            console.log('not valid')
             this.entered = false
             return;
         }
@@ -66,11 +55,9 @@ export class BoardCell extends HTMLElement {
         // TODO: read the FEN of this position and create the piece
         const piece = boardState.getPiece(to)
         if (piece != null) {
-            console.log('onDrop: piece is not null', piece)
             // clear any other piece in the cell
             const oldPiece = this.querySelector('chess-piece')
             if (oldPiece != null) {
-                console.log('onDrop: removing old piece', oldPiece)
                 oldPiece.remove()
             }
 
