@@ -1,5 +1,5 @@
-import { FenPos } from "./utils";
-import { boardState, Color, getMovesTowards, Piece, PieceType } from "./rules";
+import { Color, Piece, PieceType } from "./rules";
+import { Pos } from "./utils";
 
 export const expandRank = (rank: string): string => {
     let expandedRank = ''
@@ -42,20 +42,27 @@ export const compressRank = (rank: string): string => {
 type PlayerChangeFunction = (color: Color) => void
 
 export class FEN {
-    
-    
-    
     current: string;
     history: string[] = [];
     
+    
+    clone():FEN {
+        return FEN.parse(this.current)
+    }
+
     constructor(fen: string) {
         this.current = fen;
+        if (this.current.split(' ').length !== 6) throw new Error('Invalid FEN')
+        if (this.current.split(' ')[0].split('/').length !== 8) throw new Error('Invalid FEN')
     }
     static parse(fen: string): FEN {
         return new FEN(fen);
     }
     get currentPlayer(): Color {
         return this.current.split(' ')[1] === 'w' ? 'white' : 'black'
+    }
+    get rounds(): number {
+        return parseInt(this.current.split(' ')[5])
     }
     toString(): string {
         return this.current;
@@ -64,71 +71,19 @@ export class FEN {
     onPlayerChange(callback: PlayerChangeFunction) {
         this.playerChangeObservers.push(callback);
     }
-    isCheck():FenPos[] {
-        let res = []
-        let kingPos = boardState.getKing('white')
-        let possibleMoves = getMovesTowards(kingPos)
-        if (possibleMoves.length > 0) {
-            res.push(kingPos)
-        }
-        kingPos = boardState.getKing('black')
-        possibleMoves = getMovesTowards(kingPos)
-        if (possibleMoves.length > 0) {
-            res.push(kingPos)
-        }
-        return []
+    stateChangeObservers: (() => void)[] = [];
+    onStateChange(callback: () => void) {
+        this.stateChangeObservers.push(callback);
     }
+    
     undo() {
-        this.current = this.history.pop();
+        const p = this.history.pop()
+        if (p == undefined) throw new Error('No history')
+        this.current = p
     }
-    getKing(player: Color) {
-        const char = player === 'white' ? 'K' : 'k'
-        const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-        for (const rankSymbol of ranks) {
-            const rank = this.getRank(rankSymbol)
-            if (rank.indexOf(char) !== -1) {
-                const file = rank.indexOf(char)
-                return new FenPos(rankSymbol, file)
-            }
-        }
-    }
-    move(from: FenPos, to: FenPos) {
-        this.history.push(this.current);
-        // change player turn
-        this.togglePlayerTurn();
-
-        let rank = this.getRank(from.rank);
-        // update from position
-        let expandedRank = expandRank(rank);
-        const char = expandedRank[from.file];
-        expandedRank = expandedRank.slice(0, from.file) + '1' + expandedRank.slice(from.file + 1);
-        let compressedRank = compressRank(expandedRank);
-        boardState.updateRank(from.rank, compressedRank);
-
-        // update to position
-        rank = this.getRank(to.rank);
-        expandedRank = expandRank(rank);
-        expandedRank = expandedRank.slice(0, to.file) + char + expandedRank.slice(to.file + 1);
-        compressedRank = compressRank(expandedRank);
-        boardState.updateRank(to.rank, compressedRank);
-    }
-    togglePlayerTurn() {
-        const a = this.current.split(' ')
-        let b = a[1]
-        b = b === 'w' ? 'b' : 'w'
-        a[1] = b
-        this.current = a.join(' ');
-        if (b === 'w')
-            this.increaseFullmoveNumber();
-    }
-    increaseFullmoveNumber() {
-        const a = this.current.split(' ')
-        let b = a[5]
-        b = (parseInt(b) + 1).toString()
-        a[5] = b
-        this.current = a.join(' ');
-    }
+    
     updateRank(rank: string, newRank: string) {
+        newRank = compressRank(newRank);
         const a = this.current.split(' ');
         const b = a[0].split('/');
         // invert the order of the array, so that the first row is at the bottom
@@ -137,25 +92,80 @@ export class FEN {
         b.reverse();
         this.current = b.join('/') + ' ' + a.slice(1).join(' ')
     }
-    getPiece(pos: FenPos): Piece {
-        // look into the FEN and return the piece at the given position
-        const rank = this.getRank(pos.rank);
-        // the row can either contain a character, which means that, that position is occupied
-        // by a piece, or it can contain a number, which means that, that many positions are empty
-        // const rank = expandRank(row)
-        if (rank[pos.file] == '1') return null
-        const color = rank[pos.file] == rank[pos.file].toUpperCase() ? 'white' : 'black'
-        return  {
-            color: color,
-            type: rank[pos.file].toLowerCase() as PieceType,
-            pos: new FenPos(pos.rank, pos.file)
+}
+
+
+
+export const getKing = (state:FEN, player: Color): Pos => {
+    const char = player === 'white' ? 'K' : 'k'
+    const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    for (const rankSymbol of ranks) {
+        const rank = getRank(state, rankSymbol)
+        if (rank.indexOf(char) !== -1) {
+            const file = rank.indexOf(char)
+            return Pos.from(rankSymbol, file)
         }
     }
-    getRank(rank: string) {
-        const a = this.current.split(' ')[0];
-        const b = a.split('/');
-        // invert the order of the array, so that the first row is at the bottom
-        b.reverse();
-        return expandRank(b[rank.charCodeAt(0) - 97])
+    console.log(state)
+    throw new Error('King not found')
+}
+
+export const increaseFullmoveNumber = (state:FEN):void => {
+    const a = state.current.split(' ')
+    let b = a[5]
+    b = (parseInt(b) + 1).toString()
+    a[5] = b
+    state.current = a.join(' ');
+}
+
+export const togglePlayerTurn = (state:FEN):void => {
+    const a = state.current.split(' ')
+    let b = a[1]
+    b = b === 'w' ? 'b' : 'w'
+    a[1] = b
+    state.current = a.join(' ');
+    if (b === 'w')
+        increaseFullmoveNumber(state);
+}
+
+export const movePiece = (state:FEN, from: Pos, to: Pos):void => {
+    // save move
+    state.history.push(state.current);
+
+    // update from position
+    let rank = getRank(state, from.rank);
+    const char = rank[from.file];
+    rank = rank.slice(0, from.file) + '1' + rank.slice(from.file + 1);
+    state.updateRank(from.rank, rank);
+
+    // update to position
+    rank = getRank(state, to.rank);
+    rank = rank.slice(0, to.file) + char + rank.slice(to.file + 1);
+    state.updateRank(to.rank, rank);
+
+    // change player turn
+    togglePlayerTurn(state);
+}
+
+export const getPiece = (state:FEN, pos: Pos): Piece => {
+    // look into the FEN and return the piece at the given position
+    const rank = getRank(state, pos.rank);
+    // the row can either contain a character, which means that, that position is occupied
+    // by a piece, or it can contain a number, which means that, that many positions are empty
+    // const rank = expandRank(row)
+    if (rank[pos.file] == '1') return null
+    const color = rank[pos.file] == rank[pos.file].toUpperCase() ? 'white' : 'black'
+    return  {
+        color: color,
+        type: rank[pos.file].toLowerCase() as PieceType,
+        pos: Pos.from(pos.rank, pos.file)
     }
+}
+
+export const getRank = (state: FEN, rank: string):string => {
+    const a = state.current.split(' ')[0];
+    const b = a.split('/');
+    // invert the order of the array, so that the first row is at the bottom
+    b.reverse();
+    return expandRank(b['abcdefgh'.indexOf(rank)]);
 }

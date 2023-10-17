@@ -1,5 +1,5 @@
 import { boardState, startMoving } from '../services/rules'
-import { FenPos } from '../services/utils'
+import { Pos } from '../services/utils'
 
 export class ChessPiece extends HTMLElement {
     root: ShadowRoot
@@ -14,12 +14,12 @@ export class ChessPiece extends HTMLElement {
     onDragStart(e: DragEvent) {
         e.dataTransfer.setData('text', this.getAttribute('pos'))
 
-        const p = FenPos.parse(this.getAttribute('pos'))
+        const p = Pos.parse(this.getAttribute('pos'))
         startMoving(p)
     }
     onTouchStart(e: TouchEvent) {
         e.preventDefault()
-        const p = FenPos.parse(this.getAttribute('pos'))
+        const p = Pos.parse(this.getAttribute('pos'))
         startMoving(p)
     }
     onDragEnd(e: DragEvent) {

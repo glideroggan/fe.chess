@@ -1,5 +1,5 @@
-import { boardState, movePiece, movingPiece, validMove } from '../services/rules'
-import { FenPos } from '../services/utils'
+import { gameMovePiece, movingPiece, gameValidMove } from '../services/rules'
+import { Pos } from '../services/utils'
 
 export class BoardCell extends HTMLElement {
     root: ShadowRoot
@@ -12,7 +12,7 @@ export class BoardCell extends HTMLElement {
         this.root = this.attachShadow({ mode: 'closed' })
         this.parser = new DOMParser()
     }
-    set pos(pos: FenPos) {
+    set pos(pos: Pos) {
         this.setAttribute('pos', pos.toString())
     }
     onDragLeave(e: DragEvent) {
@@ -24,13 +24,13 @@ export class BoardCell extends HTMLElement {
         e.preventDefault()
         if (this.entered) return
         this.entered = true
-        const cellPos:FenPos = FenPos.parse(this.getAttribute('pos'))
+        const cellPos:Pos = Pos.parse(this.getAttribute('pos'))
         
         if (cellPos.equals(movingPiece.pos)) {
             this.cell.classList.remove('valid')
             return
         }
-        if (validMove(movingPiece.pos, cellPos)) {
+        if (gameValidMove(movingPiece.pos, cellPos)) {
             // tint green
             this.cell.classList.add('valid')
         }
@@ -48,9 +48,9 @@ export class BoardCell extends HTMLElement {
             return
         }
         const from = movingPiece.pos
-        const to = FenPos.parse(this.getAttribute('pos'))
+        const to = Pos.parse(this.getAttribute('pos'))
         
-        const success = movePiece(from, to)
+        const success = gameMovePiece(from, to)
         this.dispatchEvent(new CustomEvent('moved', { detail: {from:from, to:to}, bubbles: true, composed: true }))    
     }
     async connectedCallback() {

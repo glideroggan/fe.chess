@@ -1,94 +1,79 @@
-export class FenPos {
-    rank: string
-    file: number
-    constructor(rank: string, file: number) {
-        this.rank = rank
-        this.file = file
-    }
-    static parse(fen: string): FenPos {
-        return new FenPos(fen[0], parseInt(fen[1]))
-    }
-    equals(pos: FenPos):boolean {
-        return this.rank === pos.rank && this.file === pos.file
-    }
-    toString() {
-        return `${this.rank}${this.file}`
-    }
-}
+// export class FenPosOLD {
+
+
+
+//     rank: string
+//     file: number
+//     constructor(rank: string, file: number) {
+//         this.rank = rank
+//         this.file = file
+//     }
+//     // static fromNumbers(rank: number, file: number):FenPos {
+//     //     return new FenPos('abcdefgh'[rank], file)
+//     // }
+//     static parse(fen: string): FenPos {
+//         return new FenPos(fen[0], parseInt(fen[1]))
+//     }
+//     static from(rankIndex: number, file: number): FenPos {
+//         // I think this is correct, but we have some error somewhere else
+//         if (rankIndex < 0 || rankIndex > 7) throw new Error('Invalid rankIndex')
+//         return new FenPos('abcdefgh'[rankIndex], file)
+//         // return new FenPos('abcdefgh'[Math.abs(rankIndex-7)], file)
+//     }
+//     toPos():Pos {
+//         return fen2Pos(this)
+//     }
+//     equals(pos: FenPos):boolean {
+//         return this.rank === pos.rank && this.file === pos.file
+//     }
+//     toString() {
+//         return `${this.rank}${this.file}`
+//     }
+// }
 
 export class Pos {
+    
+    display: string
     x: number
     y: number
-    constructor(x: number, y: number) {
-        this.x = x
-        this.y = y
+
+    static rankArray = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
+    get file(): number {
+        if (this.x < 0 || this.x > 7) throw new Error('Invalid file')
+        return this.x
+    }
+    get rank(): string {
+        if (this.y < 0 || this.y > 7) throw new Error('Invalid rank')
+        return Pos.rankArray[this.y]
+    }
+    constructor(xFile: number, yRank: number) {
+        this.x = xFile
+        // if (xFile < 0 || xFile > 7) console.warn('Invalid file: ' + xFile.toString())
+        this.y = yRank
+        try { this.display = this.toString() } catch { '' }
+        // if (yRank < 0 || yRank > 7) console.warn('Invalid rank: ' + yRank.toString())
+        if (isNaN(this.x) || isNaN(this.y)) throw new Error('Invalid rank or file')
+    }
+    static parse(pos: string): Pos {
+        return new Pos(parseInt(pos[1]), Pos.rankArray.indexOf(pos[0]))
+    }
+    static from(rank: string, file: number): Pos {
+        if (file < 0 || file > 7) console.warn('Invalid file: ' + file.toString())
+        const index = Pos.rankArray.indexOf(rank)
+        if (index == -1) throw new Error(`Invalid rank ${rank}`)
+        return new Pos(file, index)
+    }
+    add(rank: number, file: number): Pos {
+        // rank: a=0 -> h=7
+        return new Pos(this.x + file, this.y + rank)
     }
     equals(other: Pos): boolean {
         return this.x === other.x && this.y === other.y
     }
-}
-export const pos2Fen = (pos: Pos): FenPos => {
-    let x:string
-    let y:string
-    switch (pos.y) {
-        case 0:
-            y = 'a'
-            break
-        case 1:
-            y = 'b'
-            break
-        case 2:
-            y = 'c'
-            break
-        case 3:
-            y = 'd'
-            break
-        case 4:
-            y = 'e'
-            break
-        case 5:
-            y = 'f'
-            break
-        case 6:
-            y = 'g'
-            break
-        case 7:
-            y = 'h'
-            break
+    clone(): Pos {
+        return new Pos(this.x, this.y)
     }
-    x = pos.x.toString()
-    return new FenPos(y, parseInt(x))
-}
-
-export const fen2Pos = (fen: FenPos): Pos => {
-    let x:number
-    let y:number
-    switch (fen.rank) {
-        case 'a':
-            y = 0
-            break
-        case 'b':
-            y = 1
-            break
-        case 'c':
-            y = 2
-            break
-        case 'd':
-            y = 3
-            break
-        case 'e':
-            y = 4
-            break
-        case 'f':
-            y = 5
-            break
-        case 'g':
-            y = 6
-            break
-        case 'h':
-            y = 7
-            break
+    toString(): string {
+        return `${this.rank}${this.file}`
     }
-    x = fen.file
-    return new Pos(x, y)
 }
