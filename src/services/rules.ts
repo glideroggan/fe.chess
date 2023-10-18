@@ -9,7 +9,7 @@ export type Color = 'white' | 'black'
 export type PieceType = 'p' | 'r' | 'n' | 'b' | 'q' | 'k'
 
 export class Move {
-    
+
     from: Pos
     to: Pos
     constructor(from: Pos, to: Pos) {
@@ -17,7 +17,7 @@ export class Move {
         this.to = to
     }
     toString() {
-        return `${this.from.toString()} -> ${this.to.toString()}`
+        return `${this.from.toString()}->${this.to.toString()}`
     }
     clone(): Move {
         return new Move(this.from.clone(), this.to.clone())
@@ -34,7 +34,7 @@ export const startMoving = (pos: Pos) => {
     movingPiece = getPiece(boardState, pos)
 }
 
-export const isCheck = (state:FEN):Pos[] => {
+export const isCheck = (state: FEN): Pos[] => {
     let res = []
     let kingPos = getKing(state, 'white')
     let possibleMoves = getMovesTowards(state, kingPos)
@@ -46,7 +46,7 @@ export const isCheck = (state:FEN):Pos[] => {
     if (possibleMoves.length > 0) {
         res.push(kingPos)
     }
-    return []
+    return res
 }
 
 export const resetBoard = () => {
@@ -70,7 +70,7 @@ export const gameValidMove = (from: Pos, to: Pos): boolean => {
     return false
 }
 
-const getPossibleMoves = (state:FEN, piece: Piece, kingCheck: boolean = true): Pos[] => {
+const getPossibleMoves = (state: FEN, piece: Piece, kingCheck: boolean = true): Pos[] => {
     let pMoves = []
     switch (piece.type) {
         case 'p':
@@ -100,7 +100,7 @@ const getPossibleMoves = (state:FEN, piece: Piece, kingCheck: boolean = true): P
     return pMoves
 }
 
-export const filterKingVulnerableMoves = (state:FEN, piece: Piece, moves: Pos[]): { valid: Pos[], danger: any } => {
+export const filterKingVulnerableMoves = (state: FEN, piece: Piece, moves: Pos[]): { valid: Pos[], danger: any } => {
     const validMoves: Pos[] = []
     const dangerMoves: { from: Pos, to: Pos }[] = []
     for (const to of moves) {
@@ -122,7 +122,7 @@ export const filterKingVulnerableMoves = (state:FEN, piece: Piece, moves: Pos[])
     return { valid: validMoves, danger: dangerMoves }
 }
 
-export const getMovesTowards = (state:FEN, targetPos: Pos): Move[] => {
+export const getMovesTowards = (state: FEN, targetPos: Pos): Move[] => {
     // go through whole board and check valid moves against this position
     const color = getPiece(state, targetPos).color
     const moves: Move[] = []
@@ -148,9 +148,12 @@ export const getMovesTowards = (state:FEN, targetPos: Pos): Move[] => {
     }
     return moves
 }
-
-export const getAllPossibleMovesForCurrentPlayer = (state:FEN): Move[] => {
+const cache = new Map<string, Move[]>()
+export const getAllPossibleMoves = (state: FEN, color: string): Move[] => {
     // PERF: can benefit from caching
+    // if (cache.has(`${state.toString()}${color}`)) {
+    //     return cache.get(`${state.toString()}${color}`)
+    // }
     const moves: Move[] = []
     const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     for (const rankSymbol of ranks) {
@@ -165,13 +168,16 @@ export const getAllPossibleMovesForCurrentPlayer = (state:FEN): Move[] => {
                 type: p.toLowerCase() as PieceType,
                 pos: Pos.from(rankSymbol, x)
             }
-            if (piece.color !== state.currentPlayer) continue
+            if (piece.color != color) continue
+
             let arr = getPossibleMoves(state, piece, false)
             const results = filterKingVulnerableMoves(state, piece, arr)
-            results.valid.forEach((pos) => moves.push(new Move(piece.pos, pos )))
+            results.valid.forEach((pos) => moves.push(new Move(piece.pos, pos)))
+
         }
     }
 
+    // cache.set(`${state.toString()}${color}`, moves)
     return moves
 }
 

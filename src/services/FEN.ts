@@ -56,6 +56,7 @@ export class FEN {
         if (this.current.split(' ')[0].split('/').length !== 8) throw new Error('Invalid FEN')
     }
     static parse(fen: string): FEN {
+        // console.log('fen', fen)
         return new FEN(fen);
     }
     get currentPlayer(): Color {

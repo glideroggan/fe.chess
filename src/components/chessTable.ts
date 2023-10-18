@@ -57,9 +57,10 @@ export class ChessTable extends HTMLElement {
     }
     doKingCheck() {
         const check = isCheck(boardState)
+        console.log('check:', check.length > 0)
         if (check.length > 0) {
             console.log('check:', check)
-            for (const pos in check) {
+            for (const pos of check) {
                 const cell = this.root.querySelector(`.cell[pos=${pos.toString()}]`)
                 cell.classList.add('check')
             }
@@ -86,7 +87,7 @@ export class ChessTable extends HTMLElement {
             pieceValue: true,
         }
         const move = rootNegaMax(boardState, 1, options)
-        this.doKingCheck()
+        
         console.log('aiMove...Done')
         console.log('bestMove:', move.bestMove, 'bestScore:', move.bestScore)
         gameMovePiece(move.bestMove.from, move.bestMove.to)
@@ -184,7 +185,6 @@ export class ChessTable extends HTMLElement {
         })
     }
     async onMoved(moveEvent: CustomEvent) {
-        this.doKingCheck()
         // update UI
         const fromCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.from.toString()}]`)
         const toCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.to.toString()}]`)

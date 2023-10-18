@@ -32,7 +32,6 @@
 // }
 
 export class Pos {
-    
     display: string
     x: number
     y: number
@@ -64,7 +63,6 @@ export class Pos {
         return new Pos(file, index)
     }
     add(rank: number, file: number): Pos {
-        // rank: a=0 -> h=7
         return new Pos(this.x + file, this.y + rank)
     }
     equals(other: Pos): boolean {
