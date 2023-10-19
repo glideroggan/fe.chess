@@ -7,10 +7,12 @@ export class StatusTable extends HTMLElement {
     turn: HTMLParagraphElement
     waiting: HTMLParagraphElement
     bestScore: HTMLParagraphElement;
+    status: HTMLParagraphElement;
     timers = {
         white: 0,
         black: 0
     }
+    
     
     constructor() {
         super()
@@ -26,12 +28,17 @@ export class StatusTable extends HTMLElement {
         this.turn = this.root.querySelector('[turn]')
         this.waiting = this.root.querySelector('[waiting]')
         this.bestScore = this.root.querySelector('[bestScore]')
+        this.status = this.root.querySelector('[gameStatus]')
 
         this.setTurn(this.getAttribute('turn'))
         let current:Color = 'white';
         boardState.onPlayerChange((color) => {
             current = color
             this.setTurn(color)
+        })
+        boardState.checkMateObservers.push(() => {
+            this.status.classList.remove('hidden')
+            this.status.innerText = 'Checkmate!'
         })
 
         setInterval(() => {

@@ -109,7 +109,7 @@ export const getBishopMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
 }
 
 export const getKnightMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).type != 'n') throw new Error('Not a knight')
+    if (getPiece(state, pos).type != 'n') throw new Error(`Not a knight in ${pos.toString()}`)
     let moves: Pos[] = []
     const pieceMoves: PieceMove[] = [
         { forward: 2, file: -1, attackMove: true, jump: true },

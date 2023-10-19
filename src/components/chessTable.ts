@@ -1,5 +1,6 @@
 import { getPiece, getRank } from '../services/FEN';
 import { AiState, EvaluateOptions, cache, rootNegaMax } from '../services/ai';
+import { getTravelPath } from '../services/moves';
 import { Piece, boardState, gameMovePiece, isCheck, resetBoard } from '../services/rules';
 import { Pos } from '../services/utils';
 import { BoardCell } from './boardCell';
@@ -56,10 +57,8 @@ export class ChessTable extends HTMLElement {
         }
     }
     doKingCheck() {
-        const check = isCheck(boardState)
-        console.log('check:', check.length > 0)
+        const { check, end } = isCheck(boardState)
         if (check.length > 0) {
-            console.log('check:', check)
             for (const pos of check) {
                 const cell = this.root.querySelector(`.cell[pos=${pos.toString()}]`)
                 cell.classList.add('check')
@@ -70,11 +69,13 @@ export class ChessTable extends HTMLElement {
                 cell.classList.remove('check')
             }
         }
+        if (end != undefined) {
+            const cell = this.root.querySelector(`.cell[pos=${end.pos.toString()}]`)
+            cell.classList.add('mate')
+        }
     }
     aiDepth: number = 2
     async onAiMove() {
-        console.log('aiMove...')
-        // abort any background work
         this.state.abortState.abort = true
         this.state.abortState.reason = 'aiMove'
 
@@ -85,40 +86,21 @@ export class ChessTable extends HTMLElement {
         }, 15000)
         const options: EvaluateOptions = {
             pieceValue: true,
+            scoreComparer: (a, b) => b.score - a.score
         }
-        const move = rootNegaMax(boardState, 1, options)
-        
-        console.log('aiMove...Done')
-        console.log('bestMove:', move.bestMove, 'bestScore:', move.bestScore)
-        gameMovePiece(move.bestMove.from, move.bestMove.to)
+        const move = rootNegaMax(boardState, 2, options)
+
+        // console.log('aiMove...Done')
+        if (move.bestMove != null) {
+            console.log('bestMove:', move.bestMove, 'bestScore:', move.bestScore)
+            gameMovePiece(move.bestMove.from, move.bestMove.to)
+        }
+
         this.dispatchEvent(new CustomEvent('moved', {
             detail: {
                 from: move.bestMove.from, to: move.bestMove.to
             }, bubbles: true, composed: true
         }))
-        // aiMove(boardState.clone(), 'aiMove', abortState, 1, true, options).then((move) => {
-        //     console.log('aiMove...Done')
-        //     if (move != null) {
-        //         gameMovePiece(move.bestMove.from, move.bestMove.to)
-        //         this.dispatchEvent(new CustomEvent('moved', { detail: { 
-        //             from: move.bestMove.from, to: move.bestMove.to }, bubbles: true, composed: true }))
-        //     } else {
-        //         this.doKingCheck()
-        //     }
-        //     this.state.workDone = false
-        //     this.state.abortState.abort = false
-        // })
-        //     .catch((move) => {
-        //         console.log('aiMove...interrupted', abortState.reason)
-        //         if (move != null) {
-        //             gameMovePiece(move.from, move.to)
-        //             this.dispatchEvent(new CustomEvent('moved', { detail: { from: move.from, to: move.to }, bubbles: true, composed: true }))
-        //         } else {
-        //             this.doKingCheck()
-        //         }
-        //         this.state.workDone = false
-        //         this.state.abortState.abort = false
-        //     })
     }
     state: AiState = { workDone: false, abortState: { abort: false, reason: '' }, board: null }
     aiWork(): Promise<void> {
@@ -185,19 +167,23 @@ export class ChessTable extends HTMLElement {
         })
     }
     async onMoved(moveEvent: CustomEvent) {
+        // clear board from last move
+        const cells = this.root.querySelectorAll(`.cell[dir]`)
+        for (const cell of cells) {
+            cell.removeAttribute('dir')
+        }
         // update UI
         const fromCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.from.toString()}]`)
         const toCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.to.toString()}]`)
         // remove the piece from the old cell
-        const targetPiece = toCell.querySelector('chess-piece')
-        if (targetPiece != null) {
-            targetPiece.remove()
-        }
+        this.handleRemovalOfPiece(toCell);
+
         const piece = fromCell.querySelector('chess-piece')
         piece.setAttribute('pos', moveEvent.detail.to.toString())
         toCell.appendChild(piece)
 
         this.doKingCheck()
+        this.highlightMove(moveEvent.detail.from, moveEvent.detail.to)
 
         // make a AI move if AI is enabled
         if (this.getAttribute('ai') === 'true' && boardState.currentPlayer === 'black') {
@@ -206,6 +192,42 @@ export class ChessTable extends HTMLElement {
             self.dispatchEvent(new Event('aiMove'))
             // await this.aiMove()
         }
+    }
+
+    private handleRemovalOfPiece(toCell: Element) {
+        const targetPiece = toCell.querySelector('chess-piece');
+        // TODO: don't really like that we use document here, because if we would enclose capture-box inside a shadow root, then this wouldn't work
+        // but what is the alternative? using specific state services is like redux,
+        // using events? then we still need some main service where we can subscribe to events, like redux
+        const captureBox = document.querySelector('capture-box');
+        if (targetPiece != null) {
+            targetPiece.remove();
+            // notify capture-box of the capture
+            captureBox.setAttribute('type', targetPiece.getAttribute('type'));
+            captureBox.setAttribute('color', targetPiece.getAttribute('color'));
+        } else {
+            captureBox.removeAttribute('type');
+        }
+    }
+
+    highlightMove(from: Pos, to: Pos) {
+        // highlight the cells that the piece moved in
+        // when a piece "jump", like the knight, then highlight the source and destination only
+
+        getTravelPath(boardState, from, to).reduce((prev, pos): Pos => {
+            let cell = this.root.querySelector(`.cell[pos=${pos.toString()}]`)
+            let prevCell = this.root.querySelector(`.cell[pos=${prev.toString()}]`)
+
+
+
+            if (!prev.equals(pos)) {
+                let dir = prev.direction(pos)
+                cell.setAttribute('dir', dir)
+                prevCell.setAttribute('dir', dir)
+            }
+
+            return pos
+        })
     }
     createPiece(piece: Piece, frozen: boolean): ChessPiece {
         const el = document.createElement('chess-piece') as ChessPiece

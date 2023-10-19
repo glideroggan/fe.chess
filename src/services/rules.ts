@@ -1,4 +1,5 @@
 import { FEN, getKing, getPiece, getRank, movePiece } from "./FEN"
+import { loopThroughBoard } from "./ai"
 import { getBishopMoves, getKingMoves, getKnightMoves, getPawnMoves, getQueenMoves, getRookMoves } from "./pieceMoves"
 import { Pos } from "./utils"
 
@@ -6,10 +7,11 @@ export let boardState: FEN
 export let movingPiece: Piece
 
 export type Color = 'white' | 'black'
-export type PieceType = 'p' | 'r' | 'n' | 'b' | 'q' | 'k'
+export type PieceType =
+    'p' | 'r' | 'n' | 'b' | 'q' | 'k' |
+    'P' | 'R' | 'N' | 'B' | 'Q' | 'K'
 
 export class Move {
-
     from: Pos
     to: Pos
     constructor(from: Pos, to: Pos) {
@@ -23,10 +25,23 @@ export class Move {
         return new Move(this.from.clone(), this.to.clone())
     }
 }
-export type Piece = {
-    color: Color
+export class Piece {
+
     type: PieceType
     pos: Pos
+
+    constructor(char: string, rank: number, file: number) {
+        this.type = char as PieceType
+        this.pos = new Pos(file, rank)
+    }
+
+    static from(p: PieceType, pos: Pos) {
+        return new Piece(p, pos.y, pos.x)
+    }
+
+    get color(): Color {
+        return this.type == this.type.toUpperCase() ? 'white' : 'black'
+    }
 }
 
 export const startMoving = (pos: Pos) => {
@@ -34,7 +49,7 @@ export const startMoving = (pos: Pos) => {
     movingPiece = getPiece(boardState, pos)
 }
 
-export const isCheck = (state: FEN): Pos[] => {
+export const isCheck = (state: FEN): {check:Pos[], end?:{mate:boolean,pos:Pos}} => {
     let res = []
     let kingPos = getKing(state, 'white')
     let possibleMoves = getMovesTowards(state, kingPos)
@@ -46,7 +61,14 @@ export const isCheck = (state: FEN): Pos[] => {
     if (possibleMoves.length > 0) {
         res.push(kingPos)
     }
-    return res
+    const mate = getAllPossibleMoves(state, state.currentPlayer)
+    if (mate.length == 0) {
+        kingPos = getKing(state, state.currentPlayer)
+        state.checkMate()
+        return {check: res, end: {mate: true, pos: kingPos}}
+    }
+    
+    return {check: res}
 }
 
 export const resetBoard = () => {
@@ -71,24 +93,30 @@ export const gameValidMove = (from: Pos, to: Pos): boolean => {
 }
 
 const getPossibleMoves = (state: FEN, piece: Piece, kingCheck: boolean = true): Pos[] => {
-    let pMoves = []
+    let pMoves: Pos[] = []
     switch (piece.type) {
         case 'p':
+        case 'P':
             pMoves = getPawnMoves(state, piece.color, piece.pos)
             break
         case 'r':
+        case 'R':
             pMoves = getRookMoves(state, piece.color, piece.pos)
             break
         case 'n':
+        case 'N':
             pMoves = getKnightMoves(state, piece.color, piece.pos)
             break
         case 'b':
+        case 'B':
             pMoves = getBishopMoves(state, piece.color, piece.pos)
             break
         case 'q':
+        case 'Q':
             pMoves = getQueenMoves(state, piece.color, piece.pos)
             break
         case 'k':
+        case 'K':
             pMoves = getKingMoves(state, piece.color, piece.pos)
             break
     }
@@ -148,36 +176,34 @@ export const getMovesTowards = (state: FEN, targetPos: Pos): Move[] => {
     }
     return moves
 }
-const cache = new Map<string, Move[]>()
+interface HashTable<T> {
+    [key: string]: T
+}
+const getKey = (state: FEN, color: string) => {
+    return `${state.current.split(' ')[0].toString()}${color}`
+}
+const cache: HashTable<Move[]> = {}
 export const getAllPossibleMoves = (state: FEN, color: string): Move[] => {
-    // PERF: can benefit from caching
-    // if (cache.has(`${state.toString()}${color}`)) {
-    //     return cache.get(`${state.toString()}${color}`)
-    // }
-    const moves: Move[] = []
-    const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
-    for (const rankSymbol of ranks) {
-        const rank = getRank(state, rankSymbol)
-        for (let x = 0; x < 8; x++) {
-            const p = rank[x]
-            if (!isNaN(parseInt(p))) continue
-
-            // piece
-            const piece: Piece = {
-                color: p === p.toUpperCase() ? 'white' : 'black',
-                type: p.toLowerCase() as PieceType,
-                pos: Pos.from(rankSymbol, x)
-            }
-            if (piece.color != color) continue
-
-            let arr = getPossibleMoves(state, piece, false)
-            const results = filterKingVulnerableMoves(state, piece, arr)
-            results.valid.forEach((pos) => moves.push(new Move(piece.pos, pos)))
-
-        }
+    // PERF: can benefit from caching, need to test
+    // we don't need to cache the whole thing, just the board, whose turn it is
+    // and what kind of special moves are available
+    // this way we should be able to get more cache hits
+    const cached = cache[getKey(state, color)]
+    if (cached != null) {
+        console.log(`cache hit: ${cached.length}`)
+        return cached
     }
 
-    // cache.set(`${state.toString()}${color}`, moves)
+    const moves: Move[] = []
+    loopThroughBoard(state, (piece: Piece) => {
+        if (piece.color != color) return
+
+        let arr = getPossibleMoves(state, piece, false)
+        const results = filterKingVulnerableMoves(state, piece, arr)
+        results.valid.forEach((pos) => moves.push(new Move(piece.pos, pos)))
+    })
+
+    cache[getKey(state, color)] = moves
     return moves
 }
 

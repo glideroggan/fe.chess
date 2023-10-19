@@ -1,7 +1,23 @@
 <template>
+    <style>
+        .container {
+            display: inline-block;
+        }
+        .check-mate {
+            font-size: clamp(1rem, 2vw, 2rem);
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
     <div class="container">
         <p turn></p>
         <p waiting></p>
         <p bestScore></p>
+        <p gameStatus class="check-mate hidden">Check mate</p>
+        <div class="hidden">
+            <button id="start">Start</button>
+            <button id="reset">Reset</button>
+        </div>
     </div>
 </template>

@@ -24,16 +24,9 @@ export class ChessPiece extends HTMLElement {
     }
     onDragEnd(e: DragEvent) {
         e.preventDefault()
-        // check board state if this should be removed
-        // const p = FenPos.parse(this.getAttribute('pos'))
-        // const piece = boardState.getPiece(p)
-        // if (piece == null) {
-        //     this.remove()
-        // }
-            
     }
     static get observedAttributes() {
-        return ['frozen']
+        return ['frozen', 'color', 'type']
     }
     onPlayerChange(color: string) {
         if (color === this.getAttribute('color')) {
@@ -78,7 +71,18 @@ export class ChessPiece extends HTMLElement {
                     this.div.draggable = true
                 }
             }
-
+        }
+        if (name === 'color') {
+            if (this.div !== undefined) {
+                this.div.classList.remove(oldValue)
+                this.div.classList.add(newValue)
+            }
+        }
+        if (name === 'type') {
+            if (this.div !== undefined) {
+                this.div.classList.remove(oldValue)
+                this.div.classList.add(newValue)
+            }
         }
     }
 }

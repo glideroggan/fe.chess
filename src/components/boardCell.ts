@@ -7,6 +7,12 @@ export class BoardCell extends HTMLElement {
     cell: HTMLDivElement
     info: HTMLParagraphElement
     entered: boolean
+    arrow: HTMLDivElement
+
+    static get observedAttributes() {
+        return ['dir']
+    }
+
     constructor() {
         super()
         this.root = this.attachShadow({ mode: 'closed' })
@@ -60,6 +66,7 @@ export class BoardCell extends HTMLElement {
         this.root.appendChild(template.content.cloneNode(true));
 
         this.cell = this.root.querySelector('div')
+        this.arrow = this.root.querySelector('div [arrow]')
         this.info = this.root.querySelector('[info]')
         this.info.innerHTML = this.getAttribute('pos')
         // Continue here, adding the event listeners for drag and drop
@@ -67,6 +74,17 @@ export class BoardCell extends HTMLElement {
         // TODO: need a listener for leaving the cell
         this.cell.addEventListener('dragleave', this.onDragLeave.bind(this))
         this.cell.addEventListener('drop', this.onDrop.bind(this))
+    }
+    async attributeChangedCallback(name: string, oldValue: string, newValue: string) {
+        if (name === 'dir') {
+            if (newValue === null) {
+                this.arrow.classList.remove(...this.arrow.classList)
+                return
+            }
+            this.arrow.classList.add('arrow')
+            this.arrow.classList.remove(oldValue)
+            this.arrow.classList.add(newValue)
+        }
     }
 }
 if (!customElements.get('board-cell'))

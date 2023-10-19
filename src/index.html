@@ -8,9 +8,20 @@
     <link rel="stylesheet" href="assets/css/main.css">
 </head>
 
+<style>
+    .status {
+        display: flex;
+        flex-direction: column;
+    }
+</style>
+
 <body>
     <chess-table></chess-table>
-    <status-table turn="white" waiting="0"></status-table>
+    <div class="status">
+        <status-table turn="white" waiting="0"></status-table>
+        <capture-box></capture-box>
+    </div>
+    
 </body>
 
 </html>

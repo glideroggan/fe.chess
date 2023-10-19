@@ -3,8 +3,8 @@ import './components/chessTable'
 import './components/boardCell'
 import './components/chessPiece'
 import './components/statusTable'
+import './components/captureBox'
 import { ChessTable } from './components/chessTable'
-import { StatusTable } from './components/statusTable'
 
 
 const board:ChessTable = document.querySelector('chess-table')

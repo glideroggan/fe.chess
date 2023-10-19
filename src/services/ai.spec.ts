@@ -1,9 +1,7 @@
 import { FEN, compressRank, expandRank, getKing, getPiece, getRank, increaseFullmoveNumber, movePiece, togglePlayerTurn } from "./FEN";
-import { AbortState, EvaluateOptions, capturePoints, compareScoreAndMove, compareScores, constructNodeChain, evaluate, rootNegaMax } from "./ai";
-import { getBishopMoves, getKingMoves, getKnightMoves, getPawnMoves, getQueenMoves, getRookMoves, isOutsideBoard } from "./pieceMoves";
-import { Move, filterKingVulnerableMoves, getMovesTowards } from "./rules";
+import { EvaluateOptions, capturePoints, evaluate } from "./ai";
+import { isOutsideBoard } from "./pieceMoves";
 import { Pos } from "./utils";
-import { negaMax } from "./zeroSum";
 
 describe('nothing', () => {
     it('nothing', () => {
@@ -11,131 +9,131 @@ describe('nothing', () => {
     })
 })
 
-// describe('Pos', () => {
-//     it('hmmm', () => {
-//         const state = FEN.parse('8/8/8/8/3P1P2/2P3P1/2R5/2P3P1 w KQkq - 0 1')
-//         const result = getPiece(state, Pos.from('d', 3))
-//         expect(result.color).toEqual('white')
-//         expect(result.type).toEqual('p')
-//         expect(result.pos.rank).toEqual('d')
-//         expect(result.pos.file).toEqual(3)
-//     })
-//     it('add', () => {
-//         const pos = Pos.from('a', 0)
-//         const result = pos.add(1, 1)
-//         expect(result.rank).toEqual('b')
-//         expect(result.file).toEqual(1)
-//         expect(result.x).toEqual(1)
-//         expect(result.y).toEqual(1)
-//     })
-//     it('fen2Pos', () => {
-//         const pos = Pos.from('a', 0)
-//         expect(pos.rank).toEqual('a')
-//         expect(pos.file).toEqual(0)
-//         expect(pos.x).toEqual(pos.file)
-//         expect(pos.y).toEqual(0)
-//     })
-//     it('from 1', () => {
-//         const pos = new Pos(0, 0)
-//         expect(pos).toEqual(Pos.from('a', 0))
-//     })
-//     it('from 2', () => {
-//         const pos = new Pos(1, 0)
-//         expect(pos).toEqual(Pos.from('a', 1))
-//     })
-//     it('from 3', () => {
-//         const pos = new Pos(1, 1)
-//         expect(pos).toEqual(Pos.from('b', 1))
-//     })
-//     it('from 4', () => {
-//         const pos = new Pos(0, 7)
-//         expect(pos).toEqual(Pos.from('h', 0))
-//     })
-//     it('from 5', () => {
-//         const pos = new Pos(0, 3)
-//         expect(pos).toEqual(Pos.from('d', 0))
-//     })
-//     it('from 6', () => {
-//         const pos = Pos.from('a', 1)
-//         const result = pos.add(2, 1)
-//         expect(result).toEqual(Pos.from('c', 2))
-//     })
-//     it('from (x is fine, file throws)', () => {
-//         const result = new Pos(8, 1)
-//         expect(result.x).toEqual(8)
-//         expect(() => result.file).toThrow()
-//     })
-//     it('from (y is fine, rank throws)', () => {
-//         const result = new Pos(1, 8)
-//         expect(result.y).toEqual(8)
-//         expect(() => result.rank).toThrow()
-//     })
-//     it('pos (reading rank with negative)', () => {
-//         const result = new Pos(1, -1)
-//         expect(result.y).toEqual(-1)
-//         expect(() => result.rank).toThrow()
-//     })
-//     it('pos (reading file with negative)', () => {
-//         const result = new Pos(-1, 0)
-//         expect(result.x).toEqual(-1)
-//         expect(() => result.file).toThrow()
-//     })
-//     it('from 11', () => {
-//         const result = Pos.from('a', -1)
-//         expect(result.x).toEqual(-1)
-//         expect(result.rank).toEqual('a')
-//         expect(result.y).toEqual(0)
-//         expect(() => result.file).toThrow()
-//     })
-//     it('from (throw 6)', () => {
-//         expect(() => Pos.from('', 1)).toThrow()
-//     })
-// })
+describe('Pos', () => {
+    it('hmmm', () => {
+        const state = FEN.parse('8/8/8/8/3P1P2/2P3P1/2R5/2P3P1 w KQkq - 0 1')
+        const result = getPiece(state, Pos.from('d', 3))
+        expect(result.color).toEqual('white')
+        expect(result.type).toEqual('p')
+        expect(result.pos.rank).toEqual('d')
+        expect(result.pos.file).toEqual(3)
+    })
+    it('add', () => {
+        const pos = Pos.from('a', 0)
+        const result = pos.add(1, 1)
+        expect(result.rank).toEqual('b')
+        expect(result.file).toEqual(1)
+        expect(result.x).toEqual(1)
+        expect(result.y).toEqual(1)
+    })
+    it('fen2Pos', () => {
+        const pos = Pos.from('a', 0)
+        expect(pos.rank).toEqual('a')
+        expect(pos.file).toEqual(0)
+        expect(pos.x).toEqual(pos.file)
+        expect(pos.y).toEqual(0)
+    })
+    it('from 1', () => {
+        const pos = new Pos(0, 0)
+        expect(pos).toEqual(Pos.from('a', 0))
+    })
+    it('from 2', () => {
+        const pos = new Pos(1, 0)
+        expect(pos).toEqual(Pos.from('a', 1))
+    })
+    it('from 3', () => {
+        const pos = new Pos(1, 1)
+        expect(pos).toEqual(Pos.from('b', 1))
+    })
+    it('from 4', () => {
+        const pos = new Pos(0, 7)
+        expect(pos).toEqual(Pos.from('h', 0))
+    })
+    it('from 5', () => {
+        const pos = new Pos(0, 3)
+        expect(pos).toEqual(Pos.from('d', 0))
+    })
+    it('from 6', () => {
+        const pos = Pos.from('a', 1)
+        const result = pos.add(2, 1)
+        expect(result).toEqual(Pos.from('c', 2))
+    })
+    it('from (x is fine, file throws)', () => {
+        const result = new Pos(8, 1)
+        expect(result.x).toEqual(8)
+        expect(() => result.file).toThrow()
+    })
+    it('from (y is fine, rank throws)', () => {
+        const result = new Pos(1, 8)
+        expect(result.y).toEqual(8)
+        expect(() => result.rank).toThrow()
+    })
+    it('pos (reading rank with negative)', () => {
+        const result = new Pos(1, -1)
+        expect(result.y).toEqual(-1)
+        expect(() => result.rank).toThrow()
+    })
+    it('pos (reading file with negative)', () => {
+        const result = new Pos(-1, 0)
+        expect(result.x).toEqual(-1)
+        expect(() => result.file).toThrow()
+    })
+    it('from 11', () => {
+        const result = Pos.from('a', -1)
+        expect(result.x).toEqual(-1)
+        expect(result.rank).toEqual('a')
+        expect(result.y).toEqual(0)
+        expect(() => result.file).toThrow()
+    })
+    it('from (throw 6)', () => {
+        expect(() => Pos.from('', 1)).toThrow()
+    })
+})
 
-// describe('getPiece', () => {
-//     it('getPiece a0', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const pos = Pos.from('a', 0)
-//         const result = getPiece(state, pos)
-//         expect(result).toEqual({ color: 'white', type: 'r', pos: pos })
-//     })
-//     it('getPiece h0', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const pos = Pos.from('h', 0)
-//         const result = getPiece(state, pos)
-//         expect(result).toEqual({ color: 'black', type: 'r', pos: pos })
-//     })
-//     it('getPiece h4', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const pos = Pos.from('h', 4)
-//         const result = getPiece(state, pos)
-//         expect(result).toEqual({ color: 'black', type: 'k', pos: pos })
-//     })
-//     it('getPiece a4', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const pos = Pos.from('a', 4)
-//         const result = getPiece(state, pos)
-//         expect(result).toEqual({ color: 'white', type: 'k', pos: pos })
-//     })
-// })
-// describe('positioning', () => {
-//     it('isOutsideBoard (inside)', () => {
-//         const pos = Pos.from('a', 0)
-//         const result = isOutsideBoard(pos);
-//         expect(result).toEqual(false);
-//     })
-//     it('isOutsideBoard (x>)', () => {
-//         const pos = Pos.from('a', 8)
-//         const result = isOutsideBoard(pos);
-//         expect(result).toEqual(true);
-//     })
-//     it('isOutsideBoard (x<)', () => {
-//         const pos = Pos.from('a', -1)
+describe('getPiece', () => {
+    it('getPiece a0', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const pos = Pos.from('a', 0)
+        const result = getPiece(state, pos)
+        expect(result).toEqual({ color: 'white', type: 'r', pos: pos })
+    })
+    it('getPiece h0', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const pos = Pos.from('h', 0)
+        const result = getPiece(state, pos)
+        expect(result).toEqual({ color: 'black', type: 'r', pos: pos })
+    })
+    it('getPiece h4', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const pos = Pos.from('h', 4)
+        const result = getPiece(state, pos)
+        expect(result).toEqual({ color: 'black', type: 'k', pos: pos })
+    })
+    it('getPiece a4', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const pos = Pos.from('a', 4)
+        const result = getPiece(state, pos)
+        expect(result).toEqual({ color: 'white', type: 'k', pos: pos })
+    })
+})
+describe('positioning', () => {
+    it('isOutsideBoard (inside)', () => {
+        const pos = Pos.from('a', 0)
+        const result = isOutsideBoard(pos);
+        expect(result).toEqual(false);
+    })
+    it('isOutsideBoard (x>)', () => {
+        const pos = Pos.from('a', 8)
+        const result = isOutsideBoard(pos);
+        expect(result).toEqual(true);
+    })
+    it('isOutsideBoard (x<)', () => {
+        const pos = Pos.from('a', -1)
 
-//         const result = isOutsideBoard(pos);
-//         expect(result).toEqual(true);
-//     })
-// })
+        const result = isOutsideBoard(pos);
+        expect(result).toEqual(true);
+    })
+})
 
 // describe('compareScores', () => {
 //     it('compareScores max', () => {
@@ -301,266 +299,265 @@ describe('nothing', () => {
 //     })
 // })
 
-// describe('ai', () => {
-//     it('evaluate 0', () => {
-//         const state = FEN.parse('8/8/8/8/8/8/8/8 w KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             mobility: false,
-//             pawnAdvancement: false,
-//             pieceValue: true
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(0)
-//     })
-//     it('evaluate 900', () => {
-//         const state = FEN.parse('8/8/8/8/8/8/8/K7 w KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             mobility: false,
-//             pawnAdvancement: false,
-//             pieceValue: true
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(901)
-//     })
-//     it('evaluate 900-900', () => {
-//         const state = FEN.parse('k7/8/8/8/8/8/8/K7 w KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             mobility: false,
-//             pawnAdvancement: false,
-//             pieceValue: true
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(0)
-//     })
-//     it('evaluate 900-900', () => {
-//         const state = FEN.parse('k7/8/8/8/8/8/8/K7 w KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             mobility: false,
-//             pawnAdvancement: false,
-//             pieceValue: true
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(0)
-//     })
+describe('ai', () => {
+    it('evaluate 0', () => {
+        const state = FEN.parse('8/8/8/8/8/8/8/8 w KQkq - 0 1')
+        const options: EvaluateOptions = {
+            mobility: false,
+            pawnAdvancement: false,
+            pieceValue: true
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(0)
+    })
+    it('evaluate 900', () => {
+        const state = FEN.parse('8/8/8/8/8/8/8/K7 w KQkq - 0 1')
+        const options: EvaluateOptions = {
+            mobility: false,
+            pawnAdvancement: false,
+            pieceValue: true
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(capturePoints.king)
+    })
+    it('evaluate 900-900', () => {
+        const state = FEN.parse('k7/8/8/8/8/8/8/K7 w KQkq - 0 1')
+        const options: EvaluateOptions = {
+            mobility: false,
+            pawnAdvancement: false,
+            pieceValue: true
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(0)
+    })
+    it('evaluate 900-900', () => {
+        const state = FEN.parse('k7/8/8/8/8/8/8/K7 w KQkq - 0 1')
+        const options: EvaluateOptions = {
+            mobility: false,
+            pawnAdvancement: false,
+            pieceValue: true
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(0)
+    })
 
-//     it('aiMove 1', async () => {
-//         /*
-//         d:kq------
-//         c:-p------
-//         b:P-------
-//         a:-K------
-//         --01234567
-//         */
-//         /*
-//          d:kq------
-//          c:-P------
-//          b:--------
-//          a:-K------
-//          --01234567
-//          */
-//         /*
-//          d:k-------
-//          c:-q------
-//          b:--------
-//          a:-K------
-//          --01234567
-//          */
-//         const state = FEN.parse('8/8/8/8/kq6/1p6/P7/1K6 w KQkq - 0 1')
-//         const abortState = { abort: false, reason: '' }
-//         const options: EvaluateOptions = {
-//             random: false,
-//             mobility: false,
-//             pawnAdvancement: false,
-//             pieceValue: true
-//         }
-//         let result = await aiMove(state.clone(), 'test', abortState, 0, true, options)
-//         // console.log(result)
+    // it('aiMove 1', async () => {
+    //     /*
+    //     d:kq------
+    //     c:-p------
+    //     b:P-------
+    //     a:-K------
+    //     --01234567
+    //     */
+    //     /*
+    //      d:kq------
+    //      c:-P------
+    //      b:--------
+    //      a:-K------
+    //      --01234567
+    //      */
+    //     /*
+    //      d:k-------
+    //      c:-q------
+    //      b:--------
+    //      a:-K------
+    //      --01234567
+    //      */
+    //     const state = FEN.parse('8/8/8/8/kq6/1p6/P7/1K6 w KQkq - 0 1')
+    //     const abortState = { abort: false, reason: '' }
+    //     const options: EvaluateOptions = {
+    //         random: false,
+    //         mobility: false,
+    //         pawnAdvancement: false,
+    //         pieceValue: true
+    //     }
+    //     let result = await aiMove(state.clone(), 'test', abortState, 0, true, options)
+    //     // console.log(result)
 
-//         expect(result.bestMove.from).toEqual(Pos.parse('a1'))
-//         expect(result.bestMove.to).toEqual(Pos.parse('b1'))
+    //     expect(result.bestMove.from).toEqual(Pos.parse('a1'))
+    //     expect(result.bestMove.to).toEqual(Pos.parse('b1'))
 
-//         result = await aiMove(state.clone(), 'test', abortState, 1, true, options)
-//         // console.log(result)
+    //     result = await aiMove(state.clone(), 'test', abortState, 1, true, options)
+    //     // console.log(result)
 
-//         expect(result.bestMove.from).toEqual(Pos.parse('b0'))
-//         expect(result.bestMove.to).toEqual(Pos.parse('c1'))
+    //     expect(result.bestMove.from).toEqual(Pos.parse('b0'))
+    //     expect(result.bestMove.to).toEqual(Pos.parse('c1'))
 
-//         result = await aiMove(state.clone(), 'test', abortState, 2, true, options)
-//         // console.log(result)
+    //     result = await aiMove(state.clone(), 'test', abortState, 2, true, options)
+    //     // console.log(result)
 
-//         expect(result.bestMove.from).toEqual(Pos.parse('b0'))
-//         expect(result.bestMove.to).toEqual(Pos.parse('c1'))
+    //     expect(result.bestMove.from).toEqual(Pos.parse('b0'))
+    //     expect(result.bestMove.to).toEqual(Pos.parse('c1'))
 
-//     })
-// })
-
-
-
-// describe('FEN', () => {
-//     it('getKing 1', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const result = getKing(state, 'black')
-//         expect(result).toEqual(Pos.from('h', 4))
-//     })
-//     it('getKing 2', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const result = getKing(state, 'white')
-//         expect(result).toEqual(Pos.from('a', 4))
-//     })
-//     it('movePiece 1', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const from = Pos.from('b', 0)
-//         const to = Pos.from('c', 0)
-//         movePiece(state, from, to)
-//         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1')
-//     })
-//     it('movePiece 1.1', () => {
-//         /*
-//          d:--------
-//          c:--------
-//          b:PPPPPPPP
-//          a:--------
-//          --01234567
-//          b1c1
-//          */
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const from = Pos.parse('b1')
-//         const to = Pos.parse('c1')
-//         movePiece(state, from, to)
-//         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/1P6/P1PPPPPP/RNBQKBNR b KQkq - 0 1')
-//     })
-//     it('movePiece 2', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1')
-//         const from = Pos.from('g', 1)
-//         const to = Pos.from('e', 1)
-//         movePiece(state, from, to)
-//         expect(state.current).toEqual('rnbqkbnr/p1pppppp/8/1p6/8/P7/1PPPPPPP/RNBQKBNR w KQkq - 0 2')
-//     })
-//     it('movePiece 3', () => {
-//         const state = FEN.parse('rnbqkbnr/p1pppppp/8/1p6/8/P7/1PPPPPPP/RNBQKBNR w KQkq - 0 2')
-//         const from = Pos.from('c', 0)
-//         const to = Pos.from('d', 0)
-//         movePiece(state, from, to)
-//         expect(state.current).toEqual('rnbqkbnr/p1pppppp/8/1p6/P7/8/1PPPPPPP/RNBQKBNR b KQkq - 0 2')
-//     })
-//     it('movePiece 4', () => {
-//         const state = FEN.parse('rnbqkbnr/p1pppppp/8/1p6/P7/8/1PPPPPPP/RNBQKBNR b KQkq - 0 2')
-//         const from = Pos.from('e', 1)
-//         const to = Pos.from('d', 0)
-//         movePiece(state, from, to)
-//         expect(state.current).toEqual('rnbqkbnr/p1pppppp/8/8/p7/8/1PPPPPPP/RNBQKBNR w KQkq - 0 3')
-//     })
-//     it('updateRank 1', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         state.updateRank('a', '8')
-//         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/8 w KQkq - 0 1')
-//     })
-//     it('updateRank 2', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         state.updateRank('b', '3pP3')
-//         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/3pP3/RNBQKBNR w KQkq - 0 1')
-//     })
-//     it('togglePlayerTurn', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         togglePlayerTurn(state)
-//         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1')
-//     })
-//     it('increaseFullmoveNumber 1', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const result = increaseFullmoveNumber(state)
-//         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 2')
-//     })
-//     it('increaseFullmoveNumber 10', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 9')
-//         const result = increaseFullmoveNumber(state)
-//         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 10')
-//     })
-//     it('compressRank 1', () => {
-//         const result = compressRank('11111111');
-//         expect(result).toEqual('8');
-//     })
-//     it('compressRank 2', () => {
-//         const result = compressRank('111P1111');
-//         expect(result).toEqual('3P4');
-//     })
-//     it('expandRank', () => {
-//         const result = expandRank('8');
-//         expect(result).toEqual('11111111');
-//     });
-//     it('getRank a', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const result = getRank(state, 'a');
-//         expect(result).toEqual('RNBQKBNR');
-//     })
-//     it('getRank b', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const result = getRank(state, 'b');
-//         expect(result).toEqual('PPPPPPPP');
-//     })
-//     it('getRank c', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const result = getRank(state, 'c');
-//         expect(result).toEqual('11111111');
-//     })
-//     it('getRank d', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const result = getRank(state, 'd');
-//         expect(result).toEqual('11111111');
-//     })
-//     it('getRank e', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const result = getRank(state, 'e');
-//         expect(result).toEqual('11111111');
-//     })
-//     it('getRank g', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const result = getRank(state, 'g');
-//         expect(result).toEqual('pppppppp');
-//     })
+    // })
+})
 
 
-//     it('undo (once)', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         const from = Pos.from('b', 0)
-//         const to = Pos.from('c', 0)
-//         movePiece(state, from, to)
-//         state.undo()
-//         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//     })
-//     it('undo (last step)', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         let from = Pos.from('b', 0)
-//         let to = Pos.from('c', 0)
-//         movePiece(state, from, to)
-//         from = Pos.from('c', 0)
-//         to = Pos.from('d', 0)
-//         movePiece(state, from, to)
-//         state.undo()
-//         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1')
-//     })
-//     it('undo (two times)', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         let from = Pos.from('b', 0)
-//         let to = Pos.from('c', 0)
-//         movePiece(state, from, to)
-//         from = Pos.from('c', 0)
-//         to = Pos.from('d', 0)
-//         movePiece(state, from, to)
-//         state.undo()
-//         state.undo()
-//         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//     })
-//     it('undo (error)', () => {
-//         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-//         let from = Pos.from('b', 0)
-//         let to = Pos.from('c', 0)
-//         movePiece(state, from, to)
-//         from = Pos.from('c', 0)
-//         to = Pos.from('d', 0)
-//         state.undo()
-//         expect(() => state.undo()).toThrow()
-//     })
-// });
+
+describe('FEN', () => {
+    it('getKing 1', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const result = getKing(state, 'black')
+        expect(result).toEqual(Pos.parse('h4'))
+    })
+    it('getKing 2', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const result = getKing(state, 'white')
+        expect(result).toEqual(Pos.from('a', 4))
+    })
+    it('movePiece 1', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const from = Pos.parse('b0')
+        const to = Pos.parse('c0')
+        movePiece(state, from, to)
+        expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1')
+    })
+    it('movePiece 1.1', () => {
+        /*
+         d:--------
+         c:--------
+         b:PPPPPPPP
+         a:--------
+         --01234567
+         b1c1
+         */
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const from = Pos.parse('b1')
+        const to = Pos.parse('c1')
+        movePiece(state, from, to)
+        expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/1P6/P1PPPPPP/RNBQKBNR b KQkq - 0 1')
+    })
+    it('movePiece 2', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1')
+        const from = Pos.parse('g1')
+        const to = Pos.parse('e1')
+        movePiece(state, from, to)
+        expect(state.current).toEqual('rnbqkbnr/p1pppppp/8/1p6/8/P7/1PPPPPPP/RNBQKBNR w KQkq - 0 2')
+    })
+    it('movePiece 3', () => {
+        const state = FEN.parse('rnbqkbnr/p1pppppp/8/1p6/8/P7/1PPPPPPP/RNBQKBNR w KQkq - 0 2')
+        const from = Pos.parse('c0')
+        const to = Pos.parse('d0')
+        movePiece(state, from, to)
+        expect(state.current).toEqual('rnbqkbnr/p1pppppp/8/1p6/P7/8/1PPPPPPP/RNBQKBNR b KQkq - 0 2')
+    })
+    it('movePiece 4', () => {
+        const state = FEN.parse('rnbqkbnr/p1pppppp/8/1p6/P7/8/1PPPPPPP/RNBQKBNR b KQkq - 0 2')
+        const from = Pos.from('e', 1)
+        const to = Pos.from('d', 0)
+        movePiece(state, from, to)
+        expect(state.current).toEqual('rnbqkbnr/p1pppppp/8/8/p7/8/1PPPPPPP/RNBQKBNR w KQkq - 0 3')
+    })
+    it('updateRank 1', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        state.updateRank('a', '8')
+        expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/8 w KQkq - 0 1')
+    })
+    it('updateRank 2', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        state.updateRank('b', '3pP3')
+        expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/3pP3/RNBQKBNR w KQkq - 0 1')
+    })
+    it('togglePlayerTurn', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        togglePlayerTurn(state)
+        expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1')
+    })
+    it('increaseFullmoveNumber 1', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const result = increaseFullmoveNumber(state)
+        expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 2')
+    })
+    it('increaseFullmoveNumber 10', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 9')
+        const result = increaseFullmoveNumber(state)
+        expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 10')
+    })
+    it('compressRank 1', () => {
+        const result = compressRank('11111111');
+        expect(result).toEqual('8');
+    })
+    it('compressRank 2', () => {
+        const result = compressRank('111P1111');
+        expect(result).toEqual('3P4');
+    })
+    it('expandRank', () => {
+        const result = expandRank('8');
+        expect(result).toEqual('11111111');
+    });
+    it('getRank a', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const result = getRank(state, 'a');
+        expect(result).toEqual('RNBQKBNR');
+    })
+    it('getRank b', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const result = getRank(state, 'b');
+        expect(result).toEqual('PPPPPPPP');
+    })
+    it('getRank c', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const result = getRank(state, 'c');
+        expect(result).toEqual('11111111');
+    })
+    it('getRank d', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const result = getRank(state, 'd');
+        expect(result).toEqual('11111111');
+    })
+    it('getRank e', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const result = getRank(state, 'e');
+        expect(result).toEqual('11111111');
+    })
+    it('getRank g', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const result = getRank(state, 'g');
+        expect(result).toEqual('pppppppp');
+    })
+
+    it('undo (once)', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        const from = Pos.parse('b0')
+        const to = Pos.parse('c0')
+        movePiece(state, from, to)
+        state.undo()
+        expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+    })
+    it('undo (last step)', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        let from = Pos.from('b', 0)
+        let to = Pos.from('c', 0)
+        movePiece(state, from, to)
+        from = Pos.from('c', 0)
+        to = Pos.from('d', 0)
+        movePiece(state, from, to)
+        state.undo()
+        expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/P7/1PPPPPPP/RNBQKBNR b KQkq - 0 1')
+    })
+    it('undo (two times)', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        let from = Pos.from('b', 0)
+        let to = Pos.from('c', 0)
+        movePiece(state, from, to)
+        from = Pos.from('c', 0)
+        to = Pos.from('d', 0)
+        movePiece(state, from, to)
+        state.undo()
+        state.undo()
+        expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+    })
+    it('undo (error)', () => {
+        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
+        let from = Pos.from('b', 0)
+        let to = Pos.from('c', 0)
+        movePiece(state, from, to)
+        from = Pos.from('c', 0)
+        to = Pos.from('d', 0)
+        state.undo()
+        expect(() => state.undo()).toThrow()
+    })
+});
 
 // describe('moves pawn', () => {
 //     it('getPawnMoves white', () => {
@@ -924,153 +921,163 @@ describe('nothing', () => {
 //         expect(result.valid).toEqual([])
 //     })
 // })
-// describe('evaluation', () => {
+describe('evaluation', () => {
+    it('evaluate pawn advancement (moving forward is good)', () => {
+        /*
+h:--------
+g:--------    
+f:--------        
+e:--------   
+d:P-------
+c:--------
+b:-PPPPPPP
+a:--------
+--01234567
+*/
+                            //b   c   d
+        const expectedScore = 7 * 0 + 3
+        const state = FEN.parse('8/8/8/8/P7/8/1PPPPPPP/8 w KQkq - 0 1')
+        const options: EvaluateOptions = {
+            pieceValue: false,
+            pawnAdvancement: true,
+            mobility: false
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(expectedScore)
+    })
 
-//     it('evaluate pawn advancement (moving forward is good)', () => {
-//         /*
-// h:--------
-// g:--------    
-// f:--------        
-// e:--------   
-// d:P-------
-// c:--------
-// b:-PPPPPPP
-// a:--------
-// --01234567
-// */
-//         const expectedScore = (1 * 3) + (7 * 1)
-//         const state = FEN.parse('8/8/8/8/P7/8/1PPPPPPP/8 w KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             pieceValue: false,
-//             pawnAdvancement: true,
-//             mobility: false
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(expectedScore)
-//     })
+    it('evaluate pawn position score (black)', () => {
+        const expectedScore = 0
+        const state = FEN.parse('8/pppppppp/8/8/8/8/8/8 b KQkq - 0 1')
+        const options: EvaluateOptions = {
+            pieceValue: false,
+            pawnAdvancement: true,
+            mobility: false
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(expectedScore)
+    })
+    it('evaluate pawn position score (black-advancing)', () => {
+        const expectedScore = (8 * 2)
+        const state = FEN.parse('8/8/pppppppp/8/8/8/8/8 b KQkq - 0 1')
+        const options: EvaluateOptions = {
+            pieceValue: false,
+            pawnAdvancement: true,
+            mobility: false
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(-expectedScore)
+    })
+    it('evaluate pawn position score (black-advancing 2)', () => {
+        // h:--------
+        // g:--------
+        // f:ppppppp-
+        // e:--------
+        // d:-------p
+        // c:--------
+        // b:--------
+        // a:--------
+        // --01234567
+        const expectedScore = (7 * 2) + (1 * 4)
+        const state = FEN.parse('8/8/ppppppp1/8/7p/8/8/8 b KQkq - 0 1')
+        const options: EvaluateOptions = {
+            pieceValue: false,
+            pawnAdvancement: true,
+            mobility: false,
+            random: false
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(-expectedScore)
+    })
 
-//     it('evaluate pawn position score (black)', () => {
-//         const expectedScore = 1 * (8 * 1)
-//         const state = FEN.parse('8/pppppppp/8/8/8/8/8/8 b KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             pieceValue: false,
-//             pawnAdvancement: true,
-//             mobility: false
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(-expectedScore)
-//     })
-//     it('evaluate pawn position score (black-advancing)', () => {
-//         const expectedScore = (8 * 2)
-//         const state = FEN.parse('8/8/pppppppp/8/8/8/8/8 b KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             pieceValue: false,
-//             pawnAdvancement: true,
-//             mobility: false
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(-expectedScore)
-//     })
-//     it('evaluate pawn position score (black-advancing 2)', () => {
-//         const expectedScore = (7 * 2) + (1 * 4)
-//         const state = FEN.parse('8/8/ppppppp1/8/7p/8/8/8 b KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             pieceValue: false,
-//             pawnAdvancement: true,
-//             mobility: false
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(-expectedScore)
-//     })
+    it('evaluate mobility pawn', () => {
+        /*
+        h:--------
+        g:--------    
+        f:--------        
+        e:--------   
+        d:--------
+        c:--------
+        b:PPPPPPPP
+        a:--------
+        --01234567
+        */
+        const expectedScore = 8 * 2
+        const state = FEN.parse('8/8/8/8/8/8/PPPPPPPP/8 w KQkq - 0 1')
+        const options: EvaluateOptions = {
+            pieceValue: false,
+            pawnAdvancement: false,
+            mobility: true
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(expectedScore)
+    })
+    it('evaluate mobility pawn (no move)', () => {
+        const expectedScore = (0)
+        const state = FEN.parse('PPPPPPPP/8/8/8/8/8/8/8 w KQkq - 0 1')
+        const options: EvaluateOptions = {
+            pieceValue: false,
+            pawnAdvancement: false,
+            mobility: true
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(expectedScore)
+    })
+    it('evaluate mobility knight', () => {
+        /*
+d:---P-P--
+c:--P---P-
+b:----N---
+a:--P---P-
+--01234567
+*/                        //knight pawns
+        const expectedScore = (0) + (6 * 1)
 
-//     it('evaluate mobility pawn', () => {
-//         /*
-//         h:--------
-//         g:--------    
-//         f:--------        
-//         e:--------   
-//         d:--------
-//         c:--------
-//         b:PPPPPPPP
-//         a:--------
-//         --01234567
-//         */
-//         const expectedScore = 8 * 2
-//         const state = FEN.parse('8/8/8/8/8/8/PPPPPPPP/8 w KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             pieceValue: false,
-//             pawnAdvancement: false,
-//             mobility: true
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(expectedScore)
-//     })
-//     it('evaluate mobility pawn (no move)', () => {
-//         const expectedScore = 1 * (8 * 1)
-//         const state = FEN.parse('PPPPPPPP/8/8/8/8/8/8/8 w KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             pieceValue: false,
-//             pawnAdvancement: false,
-//             mobility: true
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(expectedScore)
-//     })
-//     it('evaluate mobility knight', () => {
-//         /*
-// d:---P-P--
-// c:--P---P-
-// b:----N---
-// a:--P---P-
-// --01234567
-// */                              // knight    // pawns
-//         const expectedScore = 1 * (1) + 1 * (6 * 1)
+        const state = FEN.parse('8/8/8/8/3P1P2/2P3P1/4N3/2P3P1 w KQkq - 0 1')
+        const options: EvaluateOptions = {
+            pieceValue: false,
+            pawnAdvancement: false,
+            mobility: true
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(expectedScore)
+    })
+    it('evaluate mobility rook', () => {
+        /*
+        h:--------
+        g:--------    
+        f:--------        
+        e:---*-*--   
+        d:--*P-P*-
+        c:--P---P-
+        b:**R***x*
+        a:--P---P-
+        --01234567
+        */
+        const expectedScore =
+            // rook
+            (1 * 7) +
+            // pawns
+            (5 * 1)
 
-//         const state = FEN.parse('8/8/8/8/3P1P2/2P3P1/4N3/2P3P1 w KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             pieceValue: false,
-//             pawnAdvancement: false,
-//             mobility: true
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(expectedScore)
-//     })
-//     it('evaluate mobility rook', () => {
-//         /*
-//         h:--------
-//         g:--------    
-//         f:--------        
-//         e:---*-*--   
-//         d:--*P-P*-
-//         c:--P---P-
-//         b:**R***x*
-//         a:--P---P-
-//         --01234567
-//         */
-//         const expectedScore =
-//             // rook
-//             1 * (1 * 7) +
-//             // pawns
-//             1 * (1 * 1) + (5 * 1)
-
-//         const state = FEN.parse('8/8/8/8/3P1P2/2P3P1/2R5/2P3P1 w KQkq - 0 1')
-//         const options: EvaluateOptions = {
-//             pieceValue: false,
-//             pawnAdvancement: false,
-//             mobility: true
-//         }
-//         const result = evaluate(state, options)
-//         expect(result).toEqual(expectedScore)
-//     })
-// })
+        const state = FEN.parse('8/8/8/8/3P1P2/2P3P1/2R5/2P3P1 w KQkq - 0 1')
+        const options: EvaluateOptions = {
+            pieceValue: false,
+            pawnAdvancement: false,
+            mobility: true
+        }
+        const result = evaluate(state, options)
+        expect(result).toEqual(expectedScore)
+    })
+})
 
 // describe('evaluation from history', () => {
 //     it('why this move', async () => {
 //         /*
 // h:rnbqkb-r
-// g:pppppppp    
-// f:-------n        
-// e:--------   
+// g:pppppppp
+// f:-------n
+// e:--------
 // d:-------P
 // c:--------
 // b:PPPPPPP-
@@ -1121,7 +1128,7 @@ describe('nothing', () => {
 //         /*
 // h:rnbqkbnr
 // g:ppppp-pp
-// f:--------        
+// f:--------
 // e:-----p--
 // d:------PP
 // c:--------
@@ -1147,7 +1154,7 @@ describe('nothing', () => {
 //         /*
 // h:rnbqkbnr
 // g:ppppp-pp
-// f:--------        
+// f:--------
 // e:-----p--
 // d:------PP
 // c:--------
@@ -1181,7 +1188,7 @@ describe('nothing', () => {
 //         /*
 // h:rnbqkbnr
 // g:pppppp-p
-// f:--------        
+// f:--------
 // e:------p-
 // d:-------P
 // c:--------
@@ -1202,7 +1209,7 @@ describe('nothing', () => {
 //         /*
 // h:rnbqkb-r
 // g:pppppppp
-// f:-------n        
+// f:-------n
 // e:--------
 // d:-------P
 // c:-----P--
