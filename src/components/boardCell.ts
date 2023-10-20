@@ -1,4 +1,4 @@
-import { gameMovePiece, movingPiece, gameValidMove } from '../services/rules'
+import { gameMovePiece, movingPiece, gameValidMove, boardState } from '../services/rules'
 import { Pos } from '../services/utils'
 
 export class BoardCell extends HTMLElement {
@@ -36,7 +36,7 @@ export class BoardCell extends HTMLElement {
             this.cell.classList.remove('valid')
             return
         }
-        if (gameValidMove(movingPiece.pos, cellPos)) {
+        if (gameValidMove(boardState, movingPiece.pos, cellPos)) {
             // tint green
             this.cell.classList.add('valid')
         }

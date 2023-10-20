@@ -343,7 +343,7 @@ protect with h6f7 or g4f4
             scoreComparer: (a, b) => b.score - a.score
         }
         // const rootNode: MoveNode = constructNodeChain(state, 2, -1)
-        const result = rootNegaMax(state, 3, options)
+        const result = rootNegaMax(state, 2, options)
 
         const store = {
             maxDepth: 0,

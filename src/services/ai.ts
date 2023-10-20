@@ -1,6 +1,6 @@
 import { FEN, movePiece } from "./FEN";
-import { getMoves } from "./moves";
-import { Move, Piece, getAllPossibleMoves } from "./rules";
+import { getAllPossibleMoves, getPossibleMoves } from "./moves";
+import { Move, Piece } from "./rules";
 import { negaMax } from "./zeroSum";
 
 export const scoreObservers: ((score: number) => void)[] = []
@@ -10,7 +10,6 @@ export const onScoreUpdate = (score: number) => {
     })
 }
 
-export let cache: { [key: string]: number } = {}
 export type AiState = {
     workDone: boolean
     abortState: AbortState
@@ -185,8 +184,8 @@ export const evaluate = (fenState: FEN, options: EvaluateOptions): number => {
     return fullScore
 }
 
-const getMobilityScore = (fenState: FEN, piece: Piece): number => {
-    const moves = getMoves(fenState, piece, false).length
+const getMobilityScore = (fenState: FEN, piece: Piece, kingCheck:boolean=false): number => {
+    const moves = getPossibleMoves(fenState, piece, kingCheck).length
     return moves
 }
 

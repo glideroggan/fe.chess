@@ -1,6 +1,9 @@
 BUGS:
-
+- there is a white line in the capturebox at the bottom when a white rook is there
+- when two captures happen after each other, then last one will be "cleaned", so last capture is not shown
 TODO:
+- add caching of the FEN and moves
+  - need unittests
 - status bar
   - TESTING
   - write unit test that the call is being made to the callback
@@ -10,8 +13,7 @@ TODO:
 - bestmove from AI should contain the logic that came to that conclusion
   - include the "max" score model in the bestmove
 - undo button
-- add caching of the FEN and moves
-  - need unittests
+
 - Add touch support (mobile)
   - https://stackoverflow.com/questions/71313587/what-is-the-equivalent-of-dragstart-event-datatransfer-setdata-for-touchstart 
 

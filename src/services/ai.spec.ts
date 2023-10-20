@@ -1,4 +1,4 @@
-import { FEN, compressRank, expandRank, getKing, getPiece, getRank, increaseFullmoveNumber, movePiece, togglePlayerTurn } from "./FEN";
+import { FEN, compressRank, expandRank, getKing, getPiece, getRank, increaseRoundNumber, movePiece, togglePlayerTurn } from "./FEN";
 import { EvaluateOptions, capturePoints, evaluate } from "./ai";
 import { isOutsideBoard } from "./pieceMoves";
 import { Pos } from "./utils";
@@ -465,12 +465,12 @@ describe('FEN', () => {
     })
     it('increaseFullmoveNumber 1', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-        const result = increaseFullmoveNumber(state)
+        const result = increaseRoundNumber(state)
         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 2')
     })
     it('increaseFullmoveNumber 10', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 9')
-        const result = increaseFullmoveNumber(state)
+        const result = increaseRoundNumber(state)
         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 10')
     })
     it('compressRank 1', () => {
@@ -1044,14 +1044,14 @@ a:--P---P-
     })
     it('evaluate mobility rook', () => {
         /*
-        h:--------
+        h:k-------
         g:--------    
         f:--------        
         e:---*-*--   
         d:--*P-P*-
         c:--P---P-
         b:**R***x*
-        a:--P---P-
+        a:-KP---P-
         --01234567
         */
         const expectedScore =
@@ -1060,7 +1060,7 @@ a:--P---P-
             // pawns
             (5 * 1)
 
-        const state = FEN.parse('8/8/8/8/3P1P2/2P3P1/2R5/2P3P1 w KQkq - 0 1')
+        const state = FEN.parse('k7/8/8/8/3P1P2/2P3P1/2R5/1KP3P1 w KQkq - 0 1')
         const options: EvaluateOptions = {
             pieceValue: false,
             pawnAdvancement: false,

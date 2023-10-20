@@ -1,6 +1,6 @@
 import { getPiece, getRank } from '../services/FEN';
-import { AiState, EvaluateOptions, cache, rootNegaMax } from '../services/ai';
-import { getTravelPath } from '../services/moves';
+import { AiState, EvaluateOptions, rootNegaMax } from '../services/ai';
+import { getTravelPath, allPossibleMoveCache, getPossibleMovesCache, getMovesTowardsCache } from '../services/moves';
 import { Piece, boardState, gameMovePiece, isCheck, resetBoard } from '../services/rules';
 import { Pos } from '../services/utils';
 import { BoardCell } from './boardCell';
@@ -94,13 +94,14 @@ export class ChessTable extends HTMLElement {
         if (move.bestMove != null) {
             console.log('bestMove:', move.bestMove, 'bestScore:', move.bestScore)
             gameMovePiece(move.bestMove.from, move.bestMove.to)
+            this.dispatchEvent(new CustomEvent('moved', {
+                detail: {
+                    from: move.bestMove.from, to: move.bestMove.to
+                }, bubbles: true, composed: true
+            }))
         }
 
-        this.dispatchEvent(new CustomEvent('moved', {
-            detail: {
-                from: move.bestMove.from, to: move.bestMove.to
-            }, bubbles: true, composed: true
-        }))
+
     }
     state: AiState = { workDone: false, abortState: { abort: false, reason: '' }, board: null }
     aiWork(): Promise<void> {
@@ -167,6 +168,9 @@ export class ChessTable extends HTMLElement {
         })
     }
     async onMoved(moveEvent: CustomEvent) {
+        console.log('getPossibleMovesCache hits: ', getPossibleMovesCache.hit)
+        console.log('allPossibleMoveCache hits: ', allPossibleMoveCache.hit)
+        console.log('getMovesTowardsCache hits: ', getMovesTowardsCache.hit)
         // clear board from last move
         const cells = this.root.querySelectorAll(`.cell[dir]`)
         for (const cell of cells) {
