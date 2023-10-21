@@ -1,6 +1,7 @@
 import { FEN, compressRank, expandRank, getKing, getPiece, getRank, increaseRoundNumber, movePiece, togglePlayerTurn } from "./FEN";
-import { EvaluateOptions, capturePoints, evaluate } from "./ai";
+import { EvaluateOptions, capturePoints, evaluate, pawn, rook } from "./ai";
 import { isOutsideBoard } from "./pieceMoves";
+import { Color } from "./rules";
 import { Pos } from "./utils";
 
 describe('nothing', () => {
@@ -13,8 +14,8 @@ describe('Pos', () => {
     it('hmmm', () => {
         const state = FEN.parse('8/8/8/8/3P1P2/2P3P1/2R5/2P3P1 w KQkq - 0 1')
         const result = getPiece(state, Pos.from('d', 3))
-        expect(result.color).toEqual('white')
-        expect(result.type).toEqual('p')
+        expect(result.color.num).toEqual(1)
+        expect(result.type).toEqual('P')
         expect(result.pos.rank).toEqual('d')
         expect(result.pos.file).toEqual(3)
     })
@@ -93,27 +94,33 @@ describe('Pos', () => {
 describe('getPiece', () => {
     it('getPiece a0', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-        const pos = Pos.from('a', 0)
+        const pos = Pos.parse('a0')
         const result = getPiece(state, pos)
-        expect(result).toEqual({ color: 'white', type: 'r', pos: pos })
+        expect(result).toEqual({ color: Color.white, type: 'R', pos: pos,num:rook })
     })
-    it('getPiece h0', () => {
+    it('getPiece', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-        const pos = Pos.from('h', 0)
-        const result = getPiece(state, pos)
-        expect(result).toEqual({ color: 'black', type: 'r', pos: pos })
+        const pos = Pos.parse('h0')
+        let result = getPiece(state, pos)
+        expect(result).toEqual({ color: Color.black, type: 'r', pos: pos,num:rook })
+        result = getPiece(state, Pos.parse('a0'))
+        expect(result).toEqual({ color: Color.white, type: 'R', pos: Pos.parse('a0'), num: rook })
+        result = getPiece(state, Pos.parse('b3'))
+        expect(result).toEqual({ color: Color.white, type: 'P', pos: Pos.parse('b3'), num: pawn })
+        result = getPiece(state, Pos.parse('c0'))
+        expect(result).toEqual(null)
     })
     it('getPiece h4', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
         const pos = Pos.from('h', 4)
         const result = getPiece(state, pos)
-        expect(result).toEqual({ color: 'black', type: 'k', pos: pos })
+        expect(result).toEqual({ color: Color.black, type: 'k', pos: pos, num: 1 })
     })
     it('getPiece a4', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
         const pos = Pos.from('a', 4)
         const result = getPiece(state, pos)
-        expect(result).toEqual({ color: 'white', type: 'k', pos: pos })
+        expect(result).toEqual({ color: Color.white, type: 'K', pos: pos, num: 1 })
     })
 })
 describe('positioning', () => {
@@ -397,12 +404,12 @@ describe('ai', () => {
 describe('FEN', () => {
     it('getKing 1', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-        const result = getKing(state, 'black')
+        const result = getKing(state, Color.black)
         expect(result).toEqual(Pos.parse('h4'))
     })
     it('getKing 2', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-        const result = getKing(state, 'white')
+        const result = getKing(state, Color.white)
         expect(result).toEqual(Pos.from('a', 4))
     })
     it('movePiece 1', () => {
@@ -474,16 +481,16 @@ describe('FEN', () => {
         expect(state.current).toEqual('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 10')
     })
     it('compressRank 1', () => {
-        const result = compressRank('11111111');
+        const result = compressRank('00000000');
         expect(result).toEqual('8');
     })
     it('compressRank 2', () => {
-        const result = compressRank('111P1111');
+        const result = compressRank('000P0000');
         expect(result).toEqual('3P4');
     })
     it('expandRank', () => {
         const result = expandRank('8');
-        expect(result).toEqual('11111111');
+        expect(result).toEqual('00000000');
     });
     it('getRank a', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
@@ -498,17 +505,17 @@ describe('FEN', () => {
     it('getRank c', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
         const result = getRank(state, 'c');
-        expect(result).toEqual('11111111');
+        expect(result).toEqual('00000000');
     })
     it('getRank d', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
         const result = getRank(state, 'd');
-        expect(result).toEqual('11111111');
+        expect(result).toEqual('00000000');
     })
     it('getRank e', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
         const result = getRank(state, 'e');
-        expect(result).toEqual('11111111');
+        expect(result).toEqual('00000000');
     })
     it('getRank g', () => {
         const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
@@ -934,7 +941,7 @@ b:-PPPPPPP
 a:--------
 --01234567
 */
-                            //b   c   d
+        //b   c   d
         const expectedScore = 7 * 0 + 3
         const state = FEN.parse('8/8/8/8/P7/8/1PPPPPPP/8 w KQkq - 0 1')
         const options: EvaluateOptions = {
@@ -1010,6 +1017,7 @@ a:--------
             mobility: true
         }
         const result = evaluate(state, options)
+        // console.log(result)
         expect(result).toEqual(expectedScore)
     })
     it('evaluate mobility pawn (no move)', () => {
@@ -1067,6 +1075,7 @@ a:--P---P-
             mobility: true
         }
         const result = evaluate(state, options)
+        // console.log('state', state.toString())
         expect(result).toEqual(expectedScore)
     })
 })

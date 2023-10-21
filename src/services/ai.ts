@@ -1,6 +1,6 @@
 import { FEN, movePiece } from "./FEN";
 import { getAllPossibleMoves, getPossibleMoves } from "./moves";
-import { Move, Piece } from "./rules";
+import { Color, Move, Piece, PieceType } from "./rules";
 import { negaMax } from "./zeroSum";
 
 export const scoreObservers: ((score: number) => void)[] = []
@@ -34,10 +34,11 @@ export type MoveNode = {
     parentMove: Move
 }
 export const constructNodeChain = (state: FEN, depth: number, player: number, move?: Move): MoveNode | null => {
+    
     const node: MoveNode = { moves: [], color: player, state: state.current.slice(), parentMove: move, parentMoveDisplay: `${-player}:${move?.from.toString()}->${move?.to.toString()}` }
     if (depth == 0) return node
 
-    const moves = getAllPossibleMoves(state, player == 1 ? 'white' : 'black')
+    const moves = getAllPossibleMoves(state, player == 1 ? Color.white : Color.black)
     for (const move of moves) {
         movePiece(state, move.from, move.to)
         node.moves.push(constructNodeChain(state, depth - 1, -player, move))
@@ -47,14 +48,13 @@ export const constructNodeChain = (state: FEN, depth: number, player: number, mo
 }
 
 export const rootNegaMax = (state: FEN, depth: number, options: EvaluateOptions): AiMoveResult => {
-    const rootNode = constructNodeChain(state, depth, 
-            (state.currentPlayer == 'white' ? 1 : -1))
+    const rootNode = constructNodeChain(state, depth, state.currentPlayer.num)
     const score = negaMax(rootNode, options)
 
     // find the node with the best score
     const max = rootNode.moves.length > 0
-        ? options.scoreComparer != null 
-            ? rootNode.moves.filter(s => s != null).sort(options.scoreComparer)[0] 
+        ? options.scoreComparer != null
+            ? rootNode.moves.filter(s => s != null).sort(options.scoreComparer)[0]
             : rootNode.moves.reduce((acc, cur) => acc.score > cur.score ? acc : cur)
         : null
     onScoreUpdate(max?.score ?? 0)
@@ -115,7 +115,7 @@ export const loopThroughBoard = (fenState: FEN, callback: (piece: Piece) => void
             file += parseInt(str[i])
             continue
         }
-        const piece = new Piece(str[i], rankIndex, file)
+        const piece = new Piece(str[i], rankIndex, file, getColor(str[i]))
         callback(piece)
         file++
     }
@@ -138,32 +138,33 @@ export const evaluate = (fenState: FEN, options: EvaluateOptions): number => {
             pieces[piece.type]++
         })
 
-        const weights: { [key: string]: number } = {
-            'p': capturePoints.pawn,
-            'n': capturePoints.knight,
-            'b': capturePoints.bishop,
-            'r': capturePoints.rook,
-            'q': capturePoints.queen,
-            'k': capturePoints.king,
+        const weights: { [key: number]: number } = {
+            32: capturePoints.pawn,
+            8: capturePoints.knight,
+            4: capturePoints.bishop,
+            16: capturePoints.rook,
+            2: capturePoints.queen,
+            1: capturePoints.king,
         }
-        const pieceTypes = ['p', 'n', 'b', 'r', 'q', 'k']
 
-        for (const pieceType of pieceTypes) {
-            const weight = weights[pieceType.toLowerCase()]
+        for (let i = 1; i <= 32; i *= 2) {
+            const weight = weights[i]
             const score = weight
-                * (pieces[pieceType.toUpperCase()] - pieces[pieceType])
+                * (pieces[translateToPiece(i, Color.white)] - pieces[translateToPiece(i, Color.black)])
             fullScore += score
-            throwIfNaN(fullScore, () => console.log('score:', score, 'weight:', weight, 'pieces:', pieces[pieceType.toUpperCase()], pieces[pieceType]))
+            throwIfNaN(fullScore, () => console.log(
+                'score:', score, 'weight:', weight, 'pieces:',
+                pieces[translateToPiece(i, Color.white)], pieces[translateToPiece(i, Color.black)]))
         }
     }
 
     // pawn advancement
     if (considerPawnAdvancement) {
         loopThroughBoard(fenState, (piece: Piece) => {
-            if (piece.type == 'p' || piece.type == 'P') {
-                const pawnScore = piece.color == 'white'
-                    ? pawnAdvancement[Math.abs(piece.pos.y-7)][piece.pos.file]
-                    : pawnAdvancementBlack[Math.abs(piece.pos.y-7)][piece.pos.file] * -1
+            if (piece.num == pawn) {
+                const pawnScore = piece.color == Color.white
+                    ? pawnAdvancement[Math.abs(piece.pos.y - 7)][piece.pos.file]
+                    : pawnAdvancementBlack[Math.abs(piece.pos.y - 7)][piece.pos.file] * -1
                 fullScore += pawnScore
                 throwIfNaN(fullScore, () => console.log('pawnScore:', pawnScore, 'piece:', piece))
             }
@@ -174,7 +175,7 @@ export const evaluate = (fenState: FEN, options: EvaluateOptions): number => {
     if (mobility) {
         loopThroughBoard(fenState, (piece: Piece) => {
             const mobilityScore = getMobilityScore(fenState, piece)
-            const score = piece.color == 'white' ? mobilityScore : mobilityScore * -1
+            const score = piece.color == Color.white ? mobilityScore : mobilityScore * -1
             fullScore += score
             throwIfNaN(fullScore, () => console.log('mobilityScore:', mobilityScore, 'piece:', piece))
         })
@@ -183,8 +184,43 @@ export const evaluate = (fenState: FEN, options: EvaluateOptions): number => {
 
     return fullScore
 }
+export const getColor = (char: string): Color => char === char.toUpperCase() ? Color.white : Color.black
+export const translateToNumber = (type: PieceType): number => {
+    switch (type) {
+        case 'k': case 'K': return 1
+        case 'q': case 'Q': return 2
+        case 'b': case 'B': return 4
+        case 'n': case 'N': return 8
+        case 'r': case 'R': return 16
+        case 'p': case 'P': return 32
+    }
+}
+const translateToPiece = (type: number, color: Color): string => {
+    switch (type) {
+        case 1: return color.num == 1 ? 'K' : 'k'
+        case 2: return color.num == 1 ? 'Q' : 'q'
+        case 4: return color.num == 1 ? 'B' : 'b'
+        case 8: return color.num == 1 ? 'N' : 'n'
+        case 16: return color.num == 1 ? 'R' : 'r'
+        case 32: return color.num == 1 ? 'P' : 'p'
+    }
+}
+export const king = 1
+export const queen = 2
+export const bishop = 4
+export const knight = 8
+export const rook = 16
+export const pawn = 32
+export const isKing = (type: number): boolean => (type & 1) === 1
+export const isQueen = (type: number): boolean => (type & 2) === 2
+export const isBishop = (type: number): boolean => (type & 4) === 4
+export const isKnight = (type: number): boolean => (type & 8) === 8
+export const isRook = (type: number): boolean => (type & 16) === 16
+export const isPawn = (type: number): boolean => (type & 32) === 32
+export const mask = 1 | 2 | 4 | 8 | 16 | 32
+export const whatType = (pieceType: number): number => pieceType & mask
 
-const getMobilityScore = (fenState: FEN, piece: Piece, kingCheck:boolean=false): number => {
+const getMobilityScore = (fenState: FEN, piece: Piece, kingCheck: boolean = false): number => {
     const moves = getPossibleMoves(fenState, piece, kingCheck).length
     return moves
 }

@@ -11,7 +11,7 @@ export const expandRank = (rank: string): string => {
         } else {
             // a number
             for (let j = 0; j < parseInt(char); j++) {
-                expandedRank += '1'
+                expandedRank += '0'
             }
         }
     }
@@ -23,7 +23,7 @@ export const compressRank = (rank: string): string => {
     let count = 0
     for (let i = 0; i < rank.length; i++) {
         const char = rank[i]
-        if (char === '1') {
+        if (char === '0') {
             count++
         } else {
             if (count > 0) {
@@ -57,11 +57,11 @@ export class FEN {
         if (this.current.split(' ')[0].split('/').length !== 8) throw new Error('Invalid FEN')
     }
     static parse(fen: string): FEN {
-        // console.log('fen', fen)
+        
         return new FEN(fen);
     }
     get currentPlayer(): Color {
-        return this.current.split(' ')[1] === 'w' ? 'white' : 'black'
+        return this.current.split(' ')[1] === 'w' ? Color.white : Color.black
     }
     get rounds(): number {
         return parseInt(this.current.split(' ')[5])
@@ -106,7 +106,7 @@ export class FEN {
 
 
 export const getKing = (state: FEN, player: Color): Pos => {
-    const char = player === 'white' ? 'K' : 'k'
+    const char = player.num == 1 ? 'K' : 'k'
     const ranks = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h']
     for (const rankSymbol of ranks) {
         const rank = getRank(state, rankSymbol)
@@ -144,7 +144,7 @@ export const movePiece = (state: FEN, from: Pos, to: Pos): void => {
     // update from position
     let rank = getRank(state, from.rank);
     const char = rank[from.file];
-    rank = rank.slice(0, from.file) + '1' + rank.slice(from.file + 1);
+    rank = rank.slice(0, from.file) + '0' + rank.slice(from.file + 1);
     state.updateRank(from.rank, rank);
 
     // update to position
@@ -159,13 +159,9 @@ export const movePiece = (state: FEN, from: Pos, to: Pos): void => {
 export const getPiece = (state: FEN, pos: Pos): Piece => {
     // look into the FEN and return the piece at the given position
     const rank = getRank(state, pos.rank);
-    if (rank[pos.file] == '1') return null
-    const color = rank[pos.file] == rank[pos.file].toUpperCase() ? 'white' : 'black'
-    return {
-        color: color,
-        type: rank[pos.file].toLowerCase() as PieceType,
-        pos: Pos.from(pos.rank, pos.file)
-    }
+    if (rank[pos.file] == '0') return null
+    const color = rank[pos.file] == rank[pos.file].toUpperCase() ? Color.white : Color.black
+    return new Piece(rank[pos.file], pos.y, pos.x, color)
 }
 
 export const getRank = (state: FEN, rank: string): string => {

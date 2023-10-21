@@ -135,7 +135,7 @@ export class ChessTable extends HTMLElement {
                     continue
                 }
                 // don't do background work on AI turn
-                if (boardState.currentPlayer == 'black') {
+                if (boardState.currentPlayer.toString() == 'black') {
                     await new Promise(r => setTimeout(r, 1000))
                     continue
                 }
@@ -190,7 +190,7 @@ export class ChessTable extends HTMLElement {
         this.highlightMove(moveEvent.detail.from, moveEvent.detail.to)
 
         // make a AI move if AI is enabled
-        if (this.getAttribute('ai') === 'true' && boardState.currentPlayer === 'black') {
+        if (this.getAttribute('ai') === 'true' && boardState.currentPlayer.toString() === 'black') {
             // give time to render
             await new Promise(r => setTimeout(r, 500))
             self.dispatchEvent(new Event('aiMove'))
@@ -235,7 +235,7 @@ export class ChessTable extends HTMLElement {
     }
     createPiece(piece: Piece, frozen: boolean): ChessPiece {
         const el = document.createElement('chess-piece') as ChessPiece
-        el.setAttribute('color', piece.color)
+        el.setAttribute('color', piece.color.toString())
         el.setAttribute('type', piece.type)
         el.setAttribute('pos', piece.pos.toString())
         el.setAttribute('frozen', frozen.toString())

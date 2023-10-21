@@ -1,4 +1,5 @@
 BUGS:
+- after change of color structure, make sure that any comparisons of colors are done with "equals" and not "==" or "==="
 - there is a white line in the capturebox at the bottom when a white rook is there
 - when two captures happen after each other, then last one will be "cleaned", so last capture is not shown
 TODO:

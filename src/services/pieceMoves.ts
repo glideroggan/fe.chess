@@ -1,4 +1,5 @@
 import { FEN, getPiece, getRank } from "./FEN"
+import { bishop, king, knight, pawn, queen, rook } from "./ai"
 import { Color } from "./rules"
 import { Pos } from "./utils"
 
@@ -59,7 +60,7 @@ const pawnMoves: PieceMove[] = [
     { forward: 1, file: -1, attackMove: true },
     { forward: 1, file: 1, attackMove: true }]
 export const getKingMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).type != 'k') throw new Error('Not a king')
+    if (getPiece(state, pos).num != king) throw new Error('Not a king')
     let moves: Pos[] = []
     
     for (const move of kingMoves) {
@@ -74,7 +75,7 @@ export const getKingMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
 }
 
 export const getQueenMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).type != 'q') throw new Error('Not a queen')
+    if (getPiece(state, pos).num != queen) throw new Error('Not a queen')
     let moves: Pos[] = []
     for (const move of queenMoves) {
         if (move.continously) {
@@ -99,7 +100,7 @@ export const getQueenMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
 }
 
 export const getBishopMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).type != 'b') throw new Error('Not a bishop')
+    if (getPiece(state, pos).num != bishop) throw new Error('Not a bishop')
     let moves: Pos[] = []
     
     for (const move of bishopMoves) {
@@ -126,7 +127,7 @@ export const getBishopMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
 }
 
 export const getKnightMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).type != 'n') throw new Error(`Not a knight in ${pos.toString()}`)
+    if (getPiece(state, pos).num != knight) throw new Error(`Not a knight in ${pos.toString()}`)
     let moves: Pos[] = []
     
     for (const move of knightMoves) {
@@ -140,13 +141,12 @@ export const getKnightMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
     return moves
 }
 
-
 export const getRookMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).type != 'r') throw new Error('Not a rook')
+    if (getPiece(state, pos).num != rook) throw new Error('Not a rook')
     let moves: Pos[] = []
     
     for (const move of rookMoves) {
-        const forward = color == 'white' ? move.forward : -move.forward
+        const forward = color == Color.white ? move.forward : -move.forward
         if (move.continously) {
             let step = 1
             if (move.forward != null) {
@@ -188,6 +188,7 @@ export const getRookMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
             }
         }
     }
+    // console.log('moves rook', moves.length)
     return moves;
 }
 
@@ -198,17 +199,18 @@ export const isOutsideBoard = (pos: Pos): boolean => {
 
 export const getPawnMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
     // guard: no need really, and should only be used for debugging
-    const p = getPiece(state, pos)
-    if (p == null) {
-        throw new Error(`No pawn at position: ${pos.toString()}, rank '${getRank(state, pos.rank)}'`)
-    }
-    if (getPiece(state, pos).type != 'p') throw new Error('Not a pawn')
+    // const p = getPiece(state, pos)
+    // if (p == null) {
+    //     throw new Error(`No pawn at position: ${pos.toString()}, rank '${getRank(state, pos.rank)}'`)
+    // }
+    if (getPiece(state, pos).num != pawn) throw new Error('Not a pawn')
 
     // PERF: maybe small perf gain by caching only the range of the board that the pawn is using
     // this way we would be able to return the cached moves if the pawn is in the same position
     let moves: Pos[] = []
+    // TODO: we should look if we can make the "forward" not be specific to color
     for (const move of pawnMoves) {
-        const forward = color == 'white' ? move.forward : -move.forward
+        const forward = color == Color.white ? move.forward : -move.forward
         const newPos = pos.add(forward, move.file)
         if (isOutsideBoard(newPos)) continue
 

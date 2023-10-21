@@ -31,10 +31,10 @@ export class StatusTable extends HTMLElement {
         this.status = this.root.querySelector('[gameStatus]')
 
         this.setTurn(this.getAttribute('turn'))
-        let current:Color = 'white';
+        let current:Color = Color.white;
         boardState.onPlayerChange((color) => {
             current = color
-            this.setTurn(color)
+            this.setTurn(color.toString())
         })
         boardState.checkMateObservers.push(() => {
             this.status.classList.remove('hidden')
@@ -42,8 +42,8 @@ export class StatusTable extends HTMLElement {
         })
 
         setInterval(() => {
-            this.timers[current]++
-            this.waiting.innerText = `Waiting: ${this.timers[current]}s`
+            this.timers[current.toString()]++
+            this.waiting.innerText = `Waiting: ${this.timers[current.toString()]}s`
         }, 1000)
 
         scoreObservers.push(this.setScore.bind(this))

@@ -1,5 +1,6 @@
 import { FEN } from "./FEN"
 import { EvaluateOptions, MoveNode, capturePoints, constructNodeChain, evaluate, rootNegaMax } from "./ai"
+import { Color } from "./rules"
 import { Pos } from "./utils"
 import { negaMax } from "./zeroSum"
 
@@ -307,7 +308,7 @@ a:k-------
             leafs: 0,
             f: printOut
         }
-        const rootNode: MoveNode = constructNodeChain(state, 1, state.currentPlayer == 'white' ? 1 : -1)
+        const rootNode: MoveNode = constructNodeChain(state, 1, state.currentPlayer == Color.white ? 1 : -1)
         const result = negaMax(rootNode, options)
         // explore(rootNode, store)
 
@@ -343,7 +344,7 @@ protect with h6f7 or g4f4
             scoreComparer: (a, b) => b.score - a.score
         }
         // const rootNode: MoveNode = constructNodeChain(state, 2, -1)
-        const result = rootNegaMax(state, 2, options)
+        const result = rootNegaMax(state, 3, options)
 
         const store = {
             maxDepth: 0,
@@ -351,7 +352,7 @@ protect with h6f7 or g4f4
             leafs: 0,
             f: printOut
         }
-        // explore(rootNode, store)
+        // explore(result.root, store)
         // const max = rootNode.moves.reduce((acc, cur) => acc.score > cur.score ? acc : cur)
         // console.log('max:', `${max.parentMoveDisplay} (${max.score})`)
         // console.log(result)
