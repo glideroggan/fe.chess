@@ -1,6 +1,5 @@
-import { FEN, getPiece, getRank } from "./FEN"
-import { bishop, king, knight, pawn, queen, rook } from "./ai"
-import { Color } from "./rules"
+import { getPiece } from "./FEN"
+import { BinaryBoard, BinaryPiece, bishop, king, knight, pawn, queen, rook, white } from "./binaryBoard"
 import { Pos } from "./utils"
 
 type PieceMove = {
@@ -59,23 +58,25 @@ const pawnMoves: PieceMove[] = [
     { forward: 2, file: 0, attackMove: false, startMove: true },
     { forward: 1, file: -1, attackMove: true },
     { forward: 1, file: 1, attackMove: true }]
-export const getKingMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).num != king) throw new Error('Not a king')
+export const getKingMoves = (state: BinaryBoard, color:number, pos:Pos): Pos[] => {
+    if (getPiece(state, pos).type != king) throw new Error('Not a king')
     let moves: Pos[] = []
     
     for (const move of kingMoves) {
         const newPos = pos.add(move.forward, move.file)
         if (isOutsideBoard(newPos)) continue
-        const piece = getPiece(state, newPos)
-        if (piece == null || (move.attackMove && piece.color != color)) {
+        const otherPiece = getPiece(state, newPos)
+        if (otherPiece == null || (move.attackMove && otherPiece.color != color)) {
             moves.push(newPos)
         }
     }
     return moves
 }
 
-export const getQueenMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).num != queen) throw new Error('Not a queen')
+export const getQueenMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[] => {
+    // guard
+    if (getPiece(state, pos).type != queen) throw new Error('Not a queen')
+
     let moves: Pos[] = []
     for (const move of queenMoves) {
         if (move.continously) {
@@ -99,8 +100,8 @@ export const getQueenMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
     return moves
 }
 
-export const getBishopMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).num != bishop) throw new Error('Not a bishop')
+export const getBishopMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[] => {
+    if (getPiece(state, pos).type != bishop) throw new Error('Not a bishop')
     let moves: Pos[] = []
     
     for (const move of bishopMoves) {
@@ -126,8 +127,8 @@ export const getBishopMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
     return moves
 }
 
-export const getKnightMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).num != knight) throw new Error(`Not a knight in ${pos.toString()}`)
+export const getKnightMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[] => {
+    if (getPiece(state, pos).type != knight) throw new Error(`Not a knight in ${pos.toString()}`)
     let moves: Pos[] = []
     
     for (const move of knightMoves) {
@@ -141,12 +142,12 @@ export const getKnightMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
     return moves
 }
 
-export const getRookMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
-    if (getPiece(state, pos).num != rook) throw new Error('Not a rook')
+export const getRookMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[] => {
+    if (getPiece(state, pos).type != rook) throw new Error('Not a rook')
     let moves: Pos[] = []
     
     for (const move of rookMoves) {
-        const forward = color == Color.white ? move.forward : -move.forward
+        const forward = color == white ? move.forward : -move.forward
         if (move.continously) {
             let step = 1
             if (move.forward != null) {
@@ -197,30 +198,33 @@ export const isOutsideBoard = (pos: Pos): boolean => {
 }
 
 
-export const getPawnMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
+export const getPawnMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[] => {
     // guard: no need really, and should only be used for debugging
     // const p = getPiece(state, pos)
     // if (p == null) {
     //     throw new Error(`No pawn at position: ${pos.toString()}, rank '${getRank(state, pos.rank)}'`)
     // }
-    if (getPiece(state, pos).num != pawn) throw new Error('Not a pawn')
+    if (getPiece(state, pos).type != pawn) throw new Error('Not a pawn')
 
     // PERF: maybe small perf gain by caching only the range of the board that the pawn is using
     // this way we would be able to return the cached moves if the pawn is in the same position
     let moves: Pos[] = []
     // TODO: we should look if we can make the "forward" not be specific to color
     for (const move of pawnMoves) {
-        const forward = color == Color.white ? move.forward : -move.forward
+        const forward = color == white ? move.forward : -move.forward
+        // console.log('pawn', pos.toString(), move, 'color', color, 'forward', forward)
         const newPos = pos.add(forward, move.file)
         if (isOutsideBoard(newPos)) continue
 
-        const piece = getPiece(state, newPos)
+        const targetPosPiece = getPiece(state, newPos)
+        // console.log('pawn', pos.toString(), newPos.toString(), targetPosPiece?.toString())
         if (move.attackMove) {
-            if (piece != null && piece.color != color) {
+            if (targetPosPiece != null && targetPosPiece.color != color) {
                 moves.push(newPos)
             }
-        } else if (piece == null) {
+        } else if (targetPosPiece == null) {
             if (move.startMove) {
+                // console.log('startmove', pos.toString())
                 if (pos.rank == 'b') {
                     // no jumps allowed
                     const p = getPiece(state, pos.add(1, 0))
@@ -238,5 +242,6 @@ export const getPawnMoves = (state: FEN, color: Color, pos: Pos): Pos[] => {
             }
         }
     }
+    // console.log('moves pawn', moves.length)
     return moves
 }

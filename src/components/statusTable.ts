@@ -1,5 +1,6 @@
 import { scoreObservers } from '../services/ai';
-import { Color, boardState } from '../services/rules';
+import { isWhite, white } from '../services/binaryBoard';
+import { boardState } from '../services/rules';
 
 export class StatusTable extends HTMLElement {
     root: ShadowRoot
@@ -8,10 +9,7 @@ export class StatusTable extends HTMLElement {
     waiting: HTMLParagraphElement
     bestScore: HTMLParagraphElement;
     status: HTMLParagraphElement;
-    timers = {
-        white: 0,
-        black: 0
-    }
+    timers:number[] = []
     
     
     constructor() {
@@ -31,19 +29,21 @@ export class StatusTable extends HTMLElement {
         this.status = this.root.querySelector('[gameStatus]')
 
         this.setTurn(this.getAttribute('turn'))
-        let current:Color = Color.white;
+        let current:number = white;
         boardState.onPlayerChange((color) => {
             current = color
-            this.setTurn(color.toString())
+            this.setTurn(isWhite(color) ? 'white' : 'black')
         })
-        boardState.checkMateObservers.push(() => {
-            this.status.classList.remove('hidden')
-            this.status.innerText = 'Checkmate!'
-        })
+        // TODO: add back
+        // boardState.checkMateObservers.push(() => {
+        //     this.status.classList.remove('hidden')
+        //     this.status.innerText = 'Checkmate!'
+        // })
 
         setInterval(() => {
-            this.timers[current.toString()]++
-            this.waiting.innerText = `Waiting: ${this.timers[current.toString()]}s`
+            this.timers[current] = this.timers[current] || 0
+            this.timers[current]++
+            this.waiting.innerText = `Waiting: ${this.timers[current]}s`
         }, 1000)
 
         scoreObservers.push(this.setScore.bind(this))

@@ -1,6 +1,8 @@
-import { FEN, movePiece } from "./FEN";
+import { BinaryBoard, BinaryPiece, BoardData, bishop, black, isWhite, king, knight, move, pawn, queen, rook, undo, white } from "./binaryBoard";
+import { EvaluateOptions } from "./evaluation";
 import { getAllPossibleMoves, getPossibleMoves } from "./moves";
-import { Color, Move, Piece, PieceType } from "./rules";
+import { Move, PieceType } from "./rules";
+import { Pos } from "./utils";
 import { negaMax } from "./zeroSum";
 
 export const scoreObservers: ((score: number) => void)[] = []
@@ -13,7 +15,7 @@ export const onScoreUpdate = (score: number) => {
 export type AiState = {
     workDone: boolean
     abortState: AbortState
-    board: FEN
+    board: BinaryBoard
 }
 export type AbortState = { abort: boolean, reason: string }
 export type AiMoveResult = {
@@ -28,27 +30,28 @@ export type AiMoveResult = {
 export type MoveNode = {
     moves: MoveNode[]
     score?: number
-    color: number
-    state: string
+    color: 1 | -1
+    state: BoardData
     parentMoveDisplay?: string
     parentMove: Move
 }
-export const constructNodeChain = (state: FEN, depth: number, player: number, move?: Move): MoveNode | null => {
-    
-    const node: MoveNode = { moves: [], color: player, state: state.current.slice(), parentMove: move, parentMoveDisplay: `${-player}:${move?.from.toString()}->${move?.to.toString()}` }
+export const constructNodeChain = (state: BinaryBoard, depth: number, player: 1 | -1, parentMove?: Move): MoveNode | null => {
+
+    const node: MoveNode = { moves: [], color: player, state: state.clone().boardData, parentMove: parentMove, parentMoveDisplay: `${-player}:${parentMove?.from.toString()}->${parentMove?.to.toString()}` }
     if (depth == 0) return node
 
-    const moves = getAllPossibleMoves(state, player == 1 ? Color.white : Color.black)
-    for (const move of moves) {
-        movePiece(state, move.from, move.to)
-        node.moves.push(constructNodeChain(state, depth - 1, -player, move))
-        state.undo()
+    const moves = getAllPossibleMoves(state, player == 1 ? white : black)
+    for (const pieceMove of moves) {
+        move(state, pieceMove.from, pieceMove.to)
+        node.moves.push(constructNodeChain(state, depth - 1, player == 1 ? -1 : 1, pieceMove))
+        undo(state)
     }
     return node
 }
 
-export const rootNegaMax = (state: FEN, depth: number, options: EvaluateOptions): AiMoveResult => {
-    const rootNode = constructNodeChain(state, depth, state.currentPlayer.num)
+export const rootNegaMax = (state: BinaryBoard, depth: number, options: EvaluateOptions): AiMoveResult => {
+    // important that player variable in this stage is 1 or -1
+    const rootNode = constructNodeChain(state, depth, isWhite(state.currentPlayer) ? 1 : -1)
     const score = negaMax(rootNode, options)
 
     // find the node with the best score
@@ -66,125 +69,39 @@ export const rootNegaMax = (state: FEN, depth: number, options: EvaluateOptions)
     };
 }
 
-const promoteScore = 80
-const pawnAdvancement = [
-    [promoteScore, promoteScore, promoteScore, promoteScore, promoteScore, promoteScore, promoteScore, promoteScore],
-    [promoteScore / 2, promoteScore / 2, promoteScore / 2, promoteScore / 2, promoteScore / 2, promoteScore / 2, promoteScore / 2, promoteScore / 2],
-    [5, 5, 5, 5, 5, 5, 5, 5],
-    [4, 4, 4, 4, 4, 4, 4, 4],
-    [3, 3, 3, 3, 3, 3, 3, 3],
-    [2, 2, 2, 2, 2, 2, 2, 2],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0],
-]
-const pawnAdvancementBlack = pawnAdvancement.slice().reverse()
 
-export type EvaluateOptions = {
-    random?: boolean
-    pieceValue?: boolean
-    pawnAdvancement?: boolean
-    mobility?: boolean
-    scoreComparer?: (a: MoveNode, b: MoveNode) => number
-}
-const throwIfNaN = (value: number, callback: Function) => {
-    if (isNaN(value)) {
-        callback()
-        throw new Error('NaN')
-    }
-}
-export enum capturePoints {
-    pawn = 150,
-    knight = 500,
-    bishop = 500,
-    rook = 500,
-    queen = 900,
-    king = 9000,
-}
-export const loopThroughBoard = (fenState: FEN, callback: (piece: Piece) => void) => {
+
+
+
+
+export const loopThroughBoard = (state: BinaryBoard, callback: (piece: BinaryPiece) => void) => {
     // 8/8/8/8/8/8/PPPPPPPP/8
-    const str = fenState.current.split(' ')[0]
-    let rankIndex = 7
-    let file = 0
-    for (let i = 0; i < str.length; i++) {
-        if (str[i] == '/') {
-            rankIndex--
-            file = 0
-            continue
+    for (let y = 0; y < 8; y++) {
+        // const rank = state.getRank(y)
+        for (let x = 0; x < 8; x++) {
+            const pieceType = state.get(new Pos(x, y))
+            if (pieceType === 0) continue
+            const piece = new BinaryPiece(pieceType, new Pos(x, y))
+            callback(piece)
         }
-        if (!isNaN(parseInt(str[i]))) {
-            file += parseInt(str[i])
-            continue
-        }
-        const piece = new Piece(str[i], rankIndex, file, getColor(str[i]))
-        callback(piece)
-        file++
     }
+    // for (let i = 0; i < str.length; i++) {
+    //     if (str[i] == '/') {
+    //         rankIndex--
+    //         file = 0
+    //         continue
+    //     }
+    //     if (!isNaN(parseInt(str[i]))) {
+    //         file += parseInt(str[i])
+    //         continue
+    //     }
+    //     const piece = new Piece(str[i], rankIndex, file, getColor(str[i]))
+    //     callback(piece)
+    //     file++
+    // }
 }
-export const evaluate = (fenState: FEN, options: EvaluateOptions): number => {
-    const considerPieceValue = options?.pieceValue ?? true
-    const considerPawnAdvancement = options?.pawnAdvancement ?? true
-    const mobility = options?.mobility ?? true
-    // PERF: we run through the board several times here, if we instead do it once, and then reuse it
-    // should time the difference
-    let fullScore = 0
-    if (considerPieceValue) {
-        const pieces: { [key: string]: number } = {
-            'p': 0, 'n': 0, 'b': 0, 'r': 0, 'q': 0, 'k': 0,
-            'P': 0, 'N': 0, 'B': 0, 'R': 0, 'Q': 0, 'K': 0,
-        }
 
-        // get all pieces
-        loopThroughBoard(fenState, (piece: Piece) => {
-            pieces[piece.type]++
-        })
-
-        const weights: { [key: number]: number } = {
-            32: capturePoints.pawn,
-            8: capturePoints.knight,
-            4: capturePoints.bishop,
-            16: capturePoints.rook,
-            2: capturePoints.queen,
-            1: capturePoints.king,
-        }
-
-        for (let i = 1; i <= 32; i *= 2) {
-            const weight = weights[i]
-            const score = weight
-                * (pieces[translateToPiece(i, Color.white)] - pieces[translateToPiece(i, Color.black)])
-            fullScore += score
-            throwIfNaN(fullScore, () => console.log(
-                'score:', score, 'weight:', weight, 'pieces:',
-                pieces[translateToPiece(i, Color.white)], pieces[translateToPiece(i, Color.black)]))
-        }
-    }
-
-    // pawn advancement
-    if (considerPawnAdvancement) {
-        loopThroughBoard(fenState, (piece: Piece) => {
-            if (piece.num == pawn) {
-                const pawnScore = piece.color == Color.white
-                    ? pawnAdvancement[Math.abs(piece.pos.y - 7)][piece.pos.file]
-                    : pawnAdvancementBlack[Math.abs(piece.pos.y - 7)][piece.pos.file] * -1
-                fullScore += pawnScore
-                throwIfNaN(fullScore, () => console.log('pawnScore:', pawnScore, 'piece:', piece))
-            }
-        })
-    }
-
-    // mobility
-    if (mobility) {
-        loopThroughBoard(fenState, (piece: Piece) => {
-            const mobilityScore = getMobilityScore(fenState, piece)
-            const score = piece.color == Color.white ? mobilityScore : mobilityScore * -1
-            fullScore += score
-            throwIfNaN(fullScore, () => console.log('mobilityScore:', mobilityScore, 'piece:', piece))
-        })
-
-    }
-
-    return fullScore
-}
-export const getColor = (char: string): Color => char === char.toUpperCase() ? Color.white : Color.black
+// export const getColor = (char: string): Color => char === char.toUpperCase() ? Color.white : Color.black
 export const translateToNumber = (type: PieceType): number => {
     switch (type) {
         case 'k': case 'K': return 1
@@ -195,33 +112,24 @@ export const translateToNumber = (type: PieceType): number => {
         case 'p': case 'P': return 32
     }
 }
-const translateToPiece = (type: number, color: Color): string => {
-    switch (type) {
-        case 1: return color.num == 1 ? 'K' : 'k'
-        case 2: return color.num == 1 ? 'Q' : 'q'
-        case 4: return color.num == 1 ? 'B' : 'b'
-        case 8: return color.num == 1 ? 'N' : 'n'
-        case 16: return color.num == 1 ? 'R' : 'r'
-        case 32: return color.num == 1 ? 'P' : 'p'
+export const translateToPiece = (binaryType: number): string => {
+    // return the correct character based on the binary type
+    switch (binaryType) {
+        case king | white: return 'K'
+        case king | black: return 'k'
+        case queen | white: return 'Q'
+        case queen | black: return 'q'
+        case bishop | white: return 'B'
+        case bishop | black: return 'b'
+        case knight | white: return 'N'
+        case knight | black: return 'n'
+        case rook | white: return 'R'
+        case rook | black: return 'r'
+        case pawn | white: return 'P'
+        case pawn | black: return 'p'
     }
 }
-export const king = 1
-export const queen = 2
-export const bishop = 4
-export const knight = 8
-export const rook = 16
-export const pawn = 32
-export const isKing = (type: number): boolean => (type & 1) === 1
-export const isQueen = (type: number): boolean => (type & 2) === 2
-export const isBishop = (type: number): boolean => (type & 4) === 4
-export const isKnight = (type: number): boolean => (type & 8) === 8
-export const isRook = (type: number): boolean => (type & 16) === 16
-export const isPawn = (type: number): boolean => (type & 32) === 32
-export const mask = 1 | 2 | 4 | 8 | 16 | 32
-export const whatType = (pieceType: number): number => pieceType & mask
 
-const getMobilityScore = (fenState: FEN, piece: Piece, kingCheck: boolean = false): number => {
-    const moves = getPossibleMoves(fenState, piece, kingCheck).length
-    return moves
-}
+
+
 

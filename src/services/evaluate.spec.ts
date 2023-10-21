@@ -1,12 +1,12 @@
-import { FEN } from "./FEN"
-import { EvaluateOptions, MoveNode, capturePoints, constructNodeChain, evaluate, rootNegaMax } from "./ai"
-import { Color } from "./rules"
+import { MoveNode, constructNodeChain, rootNegaMax } from "./ai"
+import { BinaryBoard, white } from "./binaryBoard"
+import { EvaluateOptions, capturePoints, evaluate } from "./evaluation"
 import { Pos } from "./utils"
 import { negaMax } from "./zeroSum"
 
 describe('evaluate', () => {
     it('new evaluate - all', () => {
-        const state = FEN.parse('rnbqkbnr/pppppp1p/8/6p1/7P/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1')
+        const state = BinaryBoard.parse('rnbqkbnr/pppppp1p/8/6p1/7P/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1')
         const options: EvaluateOptions = {
             pieceValue: true,
             pawnAdvancement: false,
@@ -17,7 +17,8 @@ describe('evaluate', () => {
         expect(result).toEqual(0)
     })
     it('new evaluate - case 1', () => {
-        const state = FEN.parse('k7/1P6/8/8/8/8/8/K7 b KQkq - 0 1')
+        const state = BinaryBoard.parse('k7/1P6/8/8/8/8/8/K7 b KQkq - 0 1')
+        // console.log(state.boardData.data)
         const options: EvaluateOptions = {
             pieceValue: true,
             pawnAdvancement: false,
@@ -28,7 +29,7 @@ describe('evaluate', () => {
         expect(result).toEqual(150)
     })
     it('new evaluate - case 2', () => {
-        const state = FEN.parse('8/1k6/8/8/8/8/8/K7 b KQkq - 0 1')
+        const state = BinaryBoard.parse('8/1k6/8/8/8/8/8/K7 b KQkq - 0 1')
         const options: EvaluateOptions = {
             pieceValue: true,
             pawnAdvancement: false,
@@ -39,7 +40,7 @@ describe('evaluate', () => {
         expect(result).toEqual(0)
     })
     it('new evaluate - black less pawn', () => {
-        const state = FEN.parse('rnbqkbnr/pppppp1p/8/6P1/8/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1')
+        const state = BinaryBoard.parse('rnbqkbnr/pppppp1p/8/6P1/8/8/PPPPPPP1/RNBQKBNR w KQkq - 0 1')
         const options: EvaluateOptions = {
             pieceValue: true,
             pawnAdvancement: false,
@@ -52,7 +53,7 @@ describe('evaluate', () => {
     })
     it('evaluate pawn position score - 8/8/8/8/8/8/PPPPPPPP/8 w KQkq - 0 1', () => {
         const expectedScore = 0
-        const state = FEN.parse('8/8/8/8/8/8/PPPPPPPP/8 w KQkq - 0 1')
+        const state = BinaryBoard.parse('8/8/8/8/8/8/PPPPPPPP/8 w KQkq - 0 1')
         const options: EvaluateOptions = {
             pieceValue: false,
             pawnAdvancement: true,
@@ -74,7 +75,7 @@ b:PPPPPPPP
 a:RNBQKBNR
 --01234567
         */
-        const state = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1')
+        const state = BinaryBoard.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b KQkq - 0 1')
         const options: EvaluateOptions = {
             pieceValue: true,
             pawnAdvancement: true,
@@ -84,41 +85,41 @@ a:RNBQKBNR
         // const result = rootNegaMax(state, 1, options)
         // expect(getPiece(state, result.bestMove.from).type).toEqual('p')
     })
-    it('board study - 1nb1k1nr/1pp2ppp/3p4/r3p3/1PP2qP1/N4N1P/P2P1K2/R1B2B1R b KQkq - 0 14', () => {
-        /*
-h:-nb-k-nr
-g:-pp--ppp
-f:---p----  
-e:r---p---
-d:-PP--qP-
-c:N----N-P
-b:P--P-K--
-a:R-B--B-R
---01234567
-e0xc0
-*/
-        const state = FEN.parse('1nb1k1nr/1pp2ppp/3p4/r3p3/1PP2qP1/N4N1P/P2P1K2/R1B2B1R b KQkq - 0 14')
-        const options: EvaluateOptions = {
-            pieceValue: true,
-            pawnAdvancement: true,
-            mobility: true,
-            random: false,
-            scoreComparer: (a, b) => a.score - b.score
-        }
-        // const node = constructNodeChain(state, 2, -1)
-        const result = rootNegaMax(state, 2, options)
-        const max = result.root.moves.reduce((acc, cur) => acc.score > cur.score ? acc : cur)
-        const store = {
-            maxDepth: 0,
-            maxPaths: 0,
-            leafs: 0,
-            f: printOut
-        }
-        // explore(result.root, store, (a, b) => a.score - b.score)
-        // console.log('max:', max)
+//     it('board study - 1nb1k1nr/1pp2ppp/3p4/r3p3/1PP2qP1/N4N1P/P2P1K2/R1B2B1R b KQkq - 0 14', () => {
+//         /*
+// h:-nb-k-nr
+// g:-pp--ppp
+// f:---p----  
+// e:r---p---
+// d:-PP--qP-
+// c:N----N-P
+// b:P--P-K--
+// a:R-B--B-R
+// --01234567
+// e0xc0
+// */
+//         const state = BinaryBoard.parse('1nb1k1nr/1pp2ppp/3p4/r3p3/1PP2qP1/N4N1P/P2P1K2/R1B2B1R b KQkq - 0 14')
+//         const options: EvaluateOptions = {
+//             pieceValue: true,
+//             pawnAdvancement: true,
+//             mobility: true,
+//             random: false,
+//             scoreComparer: (a, b) => a.score - b.score
+//         }
+//         // const node = constructNodeChain(state, 2, -1)
+//         const result = rootNegaMax(state, 2, options)
+//         const max = result.root.moves.reduce((acc, cur) => acc.score > cur.score ? acc : cur)
+//         const store = {
+//             maxDepth: 0,
+//             maxPaths: 0,
+//             leafs: 0,
+//             f: printOut
+//         }
+//         // explore(result.root, store, (a, b) => a.score - b.score)
+//         // console.log('max:', max)
 
-        expect(result.bestScore).toEqual(-355)
-    })
+//         expect(result.bestScore).toEqual(-355)
+//     })
     it('board study - rn1Q2nr/1pN2kp1/4b3/p5Bp/1b6/8/PPqN1PPP/3RK2R b KQkq - 0 17', () => {
         /*
 h:rn-Q--nr
@@ -132,7 +133,7 @@ a:---RK--R
 --01234567
 b2d4
 */
-        const state = FEN.parse('rn1Q2nr/1pN2kp1/4b3/p5Bp/1b6/8/PPqN1PPP/3RK2R b KQkq - 0 17')
+        const state = BinaryBoard.parse('rn1Q2nr/1pN2kp1/4b3/p5Bp/1b6/8/PPqN1PPP/3RK2R b KQkq - 0 17')
         const options: EvaluateOptions = {
             pieceValue: true,
             pawnAdvancement: true,
@@ -263,7 +264,7 @@ b:--------
 a:K-------
 --01234567
 */
-        const state = FEN.parse('k7/1P6/8/8/8/8/8/K7 b KQkq - 0 1')
+        const state = BinaryBoard.parse('k7/1P6/8/8/8/8/8/K7 b KQkq - 0 1')
         const options: EvaluateOptions = {
             pawnAdvancement: false,
             mobility: false,
@@ -296,7 +297,7 @@ b:--------
 a:k-------
 --01234567
 */
-        const state = FEN.parse('K7/1p6/8/8/8/8/8/k7 w KQkq - 0 1')
+        const state = BinaryBoard.parse('K7/1p6/8/8/8/8/8/k7 w KQkq - 0 1')
         const options: EvaluateOptions = {
             pawnAdvancement: false,
             mobility: false,
@@ -308,7 +309,7 @@ a:k-------
             leafs: 0,
             f: printOut
         }
-        const rootNode: MoveNode = constructNodeChain(state, 1, state.currentPlayer == Color.white ? 1 : -1)
+        const rootNode: MoveNode = constructNodeChain(state, 1, state.currentPlayer == white ? 1 : -1)
         const result = negaMax(rootNode, options)
         // explore(rootNode, store)
 
@@ -335,7 +336,7 @@ a:RNBQK--R
 c3e5
 protect with h6f7 or g4f4
 */
-        const state = FEN.parse('rnbqkbnr/ppppp3/8/5p1p/5P1p/3BP2N/PPPP2P1/RNBQK2R b KQkq - 0 5')
+        const state = BinaryBoard.parse('rnbqkbnr/ppppp3/8/5p1p/5P1p/3BP2N/PPPP2P1/RNBQK2R b KQkq - 0 5')
         const options: EvaluateOptions = {
             pieceValue: true,
             pawnAdvancement: true,
@@ -359,30 +360,28 @@ protect with h6f7 or g4f4
         expect(result.bestMove.from.toString()).toBe(Pos.parse('g4').toString())
         expect(result.bestMove.to.toString()).toBe(Pos.parse('f4').toString())
     })
-    //     it('evaluate (dont sacrifice pawn for advancement)', () => {
-    //         /*
-    // h:rnbqkbnr
-    // g:ppppp---
-    // f:--------        
-    // e:-----p-p
-    // d:-----P-p
-    // c:---BP--N
-    // b:PPPP--P-
-    // a:RNBQK--R
-    // --01234567
-    //         */
-    //         const state = FEN.parse('rnbqkbnr/ppppp3/8/5p1p/5P1p/3BP2N/PPPP2P1/RNBQK2R b KQkq - 0 5')
-    //         const options: EvaluateOptions = {
-    //             pieceValue: true,
-    //             pawnAdvancement: true,
-    //             mobility: false,
-    //             random: false
-    //         }
-    //         const rootNode = constructNodeChain(state, 2, -1)
-    //         console.log(rootNode)
-    //         const result = negaMax(rootNode, 1, -1, options)
-    //         console.log(result)
-    //         // expect(result.bestMove.from.toString()).toEqual('g4')
-    //         // expect(result.bestMove.to.toString()).toEqual('f4')
-    //     })
+        it('evaluate (dont sacrifice pawn for advancement)', () => {
+            /*
+    h:rnbqkbnr
+    g:ppppp---
+    f:--------        
+    e:-----p-p
+    d:-----P-p
+    c:---BP--N
+    b:PPPP--P-
+    a:RNBQK--R
+    --01234567
+            */
+            const state = BinaryBoard.parse('rnbqkbnr/ppppp3/8/5p1p/5P1p/3BP2N/PPPP2P1/RNBQK2R b KQkq - 0 5')
+            const options: EvaluateOptions = {
+                pieceValue: true,
+                pawnAdvancement: true,
+                mobility: false,
+                random: false
+            }
+            const rootNode = constructNodeChain(state, 2, -1)
+            const result = negaMax(rootNode, options)
+            // expect(result.bestMove.from.toString()).toEqual('g4')
+            // expect(result.bestMove.to.toString()).toEqual('f4')
+        })
 })

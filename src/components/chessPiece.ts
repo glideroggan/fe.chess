@@ -1,3 +1,4 @@
+import { isWhite } from '../services/binaryBoard'
 import { boardState, startMoving } from '../services/rules'
 import { Pos } from '../services/utils'
 
@@ -28,8 +29,8 @@ export class ChessPiece extends HTMLElement {
     static get observedAttributes() {
         return ['frozen', 'color', 'type']
     }
-    onPlayerChange(color: string) {
-        if (color === this.getAttribute('color')) {
+    onPlayerChange(color: number) {
+        if (isWhite(color) ? 'white' : 'black' === this.getAttribute('color')) {
             this.setAttribute('frozen', 'false')
         } else {
             this.setAttribute('frozen', 'true')
