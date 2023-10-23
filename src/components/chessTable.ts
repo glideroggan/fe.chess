@@ -1,9 +1,8 @@
-import { getPiece } from '../services/FEN';
 import { AiState, rootNegaMax, translateToPiece } from '../services/ai';
-import { BinaryPiece, black, isWhite } from '../services/binaryBoard';
+import { BinaryPiece, black, getPiece, isWhite } from '../services/binaryBoard';
 import { EvaluateOptions } from '../services/evaluation';
 import { getTravelPath, allPossibleMoveCache, getPossibleMovesCache, getMovesTowardsCache } from '../services/moves';
-import { boardState, captured, gameMovePiece, isCheck } from '../services/rules';
+import { Move, boardState, captured, gameMovePiece, isCheck } from '../services/rules';
 import { Pos } from '../services/utils';
 import { BoardCell } from './boardCell';
 import { ChessPiece } from './chessPiece';
@@ -88,7 +87,6 @@ export class ChessTable extends HTMLElement {
         }, 15000)
         const options: EvaluateOptions = {
             pieceValue: true,
-            scoreComparer: (a, b) => b.score - a.score
         }
         const move = rootNegaMax(boardState, 2, options)
 
@@ -178,6 +176,11 @@ export class ChessTable extends HTMLElement {
         for (const cell of cells) {
             cell.removeAttribute('dir')
         }
+        // clear any suggestions from last turn
+        const cells2 = this.root.querySelectorAll(`.cell.ai`)
+        for (const cell of cells2) {
+            cell.classList.remove('ai')
+        }
         // update UI
         const fromCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.from.toString()}]`)
         const toCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.to.toString()}]`)
@@ -191,13 +194,33 @@ export class ChessTable extends HTMLElement {
         this.doKingCheck()
         this.highlightMove(moveEvent.detail.from, moveEvent.detail.to)
 
+        await new Promise(r => setTimeout(r, 50))
         // make a AI move if AI is enabled
         if (this.getAttribute('ai') === 'true' && boardState.currentPlayer === black) {
             // give time to render
-            await new Promise(r => setTimeout(r, 50))
             self.dispatchEvent(new Event('aiMove'))
-            // await this.aiMove()
+        } else {
+            this.giveAIsuggestion().then((move) => {
+                // color start and end cell
+                const fromCell = this.root.querySelector(`.cell[pos=${move.from.toString()}]`)
+                const toCell = this.root.querySelector(`.cell[pos=${move.to.toString()}]`)
+                fromCell.classList.add('ai')
+                toCell.classList.add('ai')
+            })
         }
+    }
+    async giveAIsuggestion(): Promise<Move> {
+        // call AI as white
+        return new Promise((resolve, reject) => {
+            const options: EvaluateOptions = {
+                pieceValue: true,
+                pawnAdvancement: true,
+                mobility: true,
+                console: true,
+            }
+            const move = rootNegaMax(boardState, 2, options)
+            resolve(move.bestMove)
+        })
     }
 
     private handleRemovalOfPiece(toCell: Element) {

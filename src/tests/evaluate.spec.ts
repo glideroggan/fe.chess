@@ -1,8 +1,8 @@
-import { MoveNode, constructNodeChain, rootNegaMax } from "./ai"
-import { BinaryBoard, white } from "./binaryBoard"
-import { EvaluateOptions, capturePoints, evaluate } from "./evaluation"
-import { Pos } from "./utils"
-import { negaMax } from "./zeroSum"
+import { MoveNode, constructNodeChain, explore, printOut, rootNegaMax } from "../services/ai"
+import { BinaryBoard, white } from "../services/binaryBoard"
+import { EvaluateOptions, capturePoints, evaluate } from "../services/evaluation"
+import { Pos } from "../services/utils"
+import { negaMax } from "../services/zeroSum"
 
 describe('evaluate', () => {
     it('new evaluate - all', () => {
@@ -10,6 +10,17 @@ describe('evaluate', () => {
         const options: EvaluateOptions = {
             pieceValue: true,
             pawnAdvancement: false,
+            mobility: false,
+        }
+        const result = evaluate(state, options)
+
+        expect(result).toEqual(0)
+    })
+    it('new evaluate - all 2', () => {
+        const state = BinaryBoard.parse('rnbqkbnr/pppp1ppp/8/4p3/8/4P3/PPPP1PPP/RNBQKBNR w KQkq - 0 1')
+        const options: EvaluateOptions = {
+            pieceValue: false,
+            pawnAdvancement: true,
             mobility: false,
         }
         const result = evaluate(state, options)
@@ -85,41 +96,41 @@ a:RNBQKBNR
         // const result = rootNegaMax(state, 1, options)
         // expect(getPiece(state, result.bestMove.from).type).toEqual('p')
     })
-//     it('board study - 1nb1k1nr/1pp2ppp/3p4/r3p3/1PP2qP1/N4N1P/P2P1K2/R1B2B1R b KQkq - 0 14', () => {
-//         /*
-// h:-nb-k-nr
-// g:-pp--ppp
-// f:---p----  
-// e:r---p---
-// d:-PP--qP-
-// c:N----N-P
-// b:P--P-K--
-// a:R-B--B-R
-// --01234567
-// e0xc0
-// */
-//         const state = BinaryBoard.parse('1nb1k1nr/1pp2ppp/3p4/r3p3/1PP2qP1/N4N1P/P2P1K2/R1B2B1R b KQkq - 0 14')
-//         const options: EvaluateOptions = {
-//             pieceValue: true,
-//             pawnAdvancement: true,
-//             mobility: true,
-//             random: false,
-//             scoreComparer: (a, b) => a.score - b.score
-//         }
-//         // const node = constructNodeChain(state, 2, -1)
-//         const result = rootNegaMax(state, 2, options)
-//         const max = result.root.moves.reduce((acc, cur) => acc.score > cur.score ? acc : cur)
-//         const store = {
-//             maxDepth: 0,
-//             maxPaths: 0,
-//             leafs: 0,
-//             f: printOut
-//         }
-//         // explore(result.root, store, (a, b) => a.score - b.score)
-//         // console.log('max:', max)
+    //     it('board study - 1nb1k1nr/1pp2ppp/3p4/r3p3/1PP2qP1/N4N1P/P2P1K2/R1B2B1R b KQkq - 0 14', () => {
+    //         /*
+    // h:-nb-k-nr
+    // g:-pp--ppp
+    // f:---p----  
+    // e:r---p---
+    // d:-PP--qP-
+    // c:N----N-P
+    // b:P--P-K--
+    // a:R-B--B-R
+    // --01234567
+    // e0xc0
+    // */
+    //         const state = BinaryBoard.parse('1nb1k1nr/1pp2ppp/3p4/r3p3/1PP2qP1/N4N1P/P2P1K2/R1B2B1R b KQkq - 0 14')
+    //         const options: EvaluateOptions = {
+    //             pieceValue: true,
+    //             pawnAdvancement: true,
+    //             mobility: true,
+    //             random: false,
+    //             scoreComparer: (a, b) => a.score - b.score
+    //         }
+    //         // const node = constructNodeChain(state, 2, -1)
+    //         const result = rootNegaMax(state, 2, options)
+    //         const max = result.root.moves.reduce((acc, cur) => acc.score > cur.score ? acc : cur)
+    //         const store = {
+    //             maxDepth: 0,
+    //             maxPaths: 0,
+    //             leafs: 0,
+    //             f: printOut
+    //         }
+    //         // explore(result.root, store, (a, b) => a.score - b.score)
+    //         // console.log('max:', max)
 
-//         expect(result.bestScore).toEqual(-355)
-//     })
+    //         expect(result.bestScore).toEqual(-355)
+    //     })
     it('board study - rn1Q2nr/1pN2kp1/4b3/p5Bp/1b6/8/PPqN1PPP/3RK2R b KQkq - 0 17', () => {
         /*
 h:rn-Q--nr
@@ -139,7 +150,6 @@ b2d4
             pawnAdvancement: true,
             mobility: true,
             random: false,
-            scoreComparer: (a, b) => b.score - a.score
         }
         // const node = constructNodeChain(state, 2, -1)
         const result = rootNegaMax(state, 2, options)
@@ -156,29 +166,7 @@ b2d4
         // expect(result.bestScore).toEqual(-355)
     })
 })
-const printOut = (n: MoveNode) => {
-    if (n.parentMove != null) {
-        const c = n.color == 1 ? 'black' : 'white'
-        console.log(`${c}: ${n.parentMove?.toString()} (${n.score}) - ${n.state})`)
-    }
-}
 
-const explore = (n: MoveNode, store: any, comparer?: ((a: MoveNode, b: MoveNode) => number)) => {
-    if (n == null) return
-    store.maxPaths = Math.max(store.maxPaths, n.moves.length)
-    if (store.f !== undefined) store.f(n)
-    if (comparer == undefined) {
-        for (const m of n.moves) {
-            store.leafs++
-            explore(m, store)
-        }
-    } else {
-        // sort by score
-        const sorted = n.moves.filter(a => a != null).sort(comparer)
-        explore(sorted[0], store, comparer)
-    }
-
-}
 describe('test', () => {
     //     it('constructNodeChain (correct depth and explored all paths)', () => {
     //         /*
@@ -251,7 +239,7 @@ describe('test', () => {
     //         // explore(rootNode, 1, store, (a, b) => a.score - b.score)
     //         expect(Math.abs(result)).toBe(0)
     //     })
-    
+
     it('negamax (correct move)', () => {
         /*
 h:k-------
@@ -322,66 +310,64 @@ a:k-------
     //     const state = FEN.parse('rnbqkbnr/ppppp3/8/5p1p/5P1p/3BP2N/PPPP2P1/RNBQK2R b KQkq - 0 5')
     //     getMoves(state, Pos.parse('g4'))
     // })
-    it('negamax (correct move, protect pawn)', () => {
+
+    it('better score with protection', () => {
         /*
-h:rnbqkbnr
-g:ppppp---
+h:rn--k-nr
+g:pQ---ppp
 f:--------        
-e:-----p-p
-d:-----P-p
-c:---BP--N
-b:PPPP--P-
-a:RNBQK--R
+e:---Bp-b-
+d:----P---
+c:--P--q--
+b:PP-P-P-P
+a:RNB-KR--
 --01234567
-c3e5
-protect with h6f7 or g4f4
-*/
-        const state = BinaryBoard.parse('rnbqkbnr/ppppp3/8/5p1p/5P1p/3BP2N/PPPP2P1/RNBQK2R b KQkq - 0 5')
+e6xb3
+        */
+        const state = BinaryBoard.parse('rnb1k1nr/2pp2p1/8/pp1P2Bp/6N1/P3Q3/5P1P/7K b KQkq - 0 27')
         const options: EvaluateOptions = {
             pieceValue: true,
-            pawnAdvancement: true,
-            mobility: true,
-            random: false,
-            scoreComparer: (a, b) => b.score - a.score
         }
-        // const rootNode: MoveNode = constructNodeChain(state, 2, -1)
-        const result = rootNegaMax(state, 3, options)
-
-        const store = {
-            maxDepth: 0,
-            maxPaths: 0,
-            leafs: 0,
-            f: printOut
-        }
-        // explore(result.root, store)
-        // const max = rootNode.moves.reduce((acc, cur) => acc.score > cur.score ? acc : cur)
-        // console.log('max:', `${max.parentMoveDisplay} (${max.score})`)
-        // console.log(result)
-        expect(result.bestMove.from.toString()).toBe(Pos.parse('g4').toString())
-        expect(result.bestMove.to.toString()).toBe(Pos.parse('f4').toString())
-    })
-        it('evaluate (dont sacrifice pawn for advancement)', () => {
-            /*
-    h:rnbqkbnr
-    g:ppppp---
-    f:--------        
-    e:-----p-p
-    d:-----P-p
-    c:---BP--N
-    b:PPPP--P-
-    a:RNBQK--R
-    --01234567
-            */
-            const state = BinaryBoard.parse('rnbqkbnr/ppppp3/8/5p1p/5P1p/3BP2N/PPPP2P1/RNBQK2R b KQkq - 0 5')
-            const options: EvaluateOptions = {
-                pieceValue: true,
-                pawnAdvancement: true,
-                mobility: false,
-                random: false
-            }
-            const rootNode = constructNodeChain(state, 2, -1)
-            const result = negaMax(rootNode, options)
-            // expect(result.bestMove.from.toString()).toEqual('g4')
-            // expect(result.bestMove.to.toString()).toEqual('f4')
+        const result = rootNegaMax(state, 1, options)
+        let str = ''
+        explore(result.root, {
+            f: printOut,
+            strCollector: (s: string) => str += s
         })
+        // console.log(str)
+        // console.log('score', result.bestScore)
+        // console.log(`move: ${result.bestMove.toString()}`)
+        expect(result.bestMove.from.toString()).toEqual('h6')
+        expect(result.bestMove.to.toString()).toEqual('g4')
+    })
+
+    it('evaluate (is this a good move?)', () => {
+        /*
+h:rn--k-nr
+g:pQ---ppp
+f:--------        
+e:---Bp-b-
+d:----P---
+c:--P--q--
+b:PP-P-P-P
+a:RNB-KR--
+--01234567
+e6xb3
+        */
+        const state = BinaryBoard.parse('rnb1k1nr/2pp2p1/8/pp1P2Bp/6N1/P3Q3/5P1P/7K b KQkq - 0 27')
+        const options: EvaluateOptions = {
+            pieceValue: true,
+        }
+        const result = rootNegaMax(state, 1, options)
+        let str = ''
+        explore(result.root, {
+            f: printOut,
+            strCollector: (s: string) => str += s
+        })
+        // console.log(str)
+        // console.log('score', result.bestScore)
+        // console.log(`move: ${result.bestMove.toString()}`)
+        // expect(result.bestMove.from.toString()).toEqual('h4')
+        // expect(result.bestMove.to.toString()).toEqual('g5')
+    })
 })

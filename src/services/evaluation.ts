@@ -1,4 +1,4 @@
-import { MoveNode, loopThroughBoard } from "./ai"
+import { loopThroughBoard } from "./ai"
 import { BinaryBoard, BinaryPiece, bishop, black, king, knight, pawn, queen, rook, white } from "./binaryBoard"
 import { getPossibleMoves } from "./moves"
 
@@ -8,7 +8,7 @@ const pawnAdvancement = [
     [promoteScore / 2, promoteScore / 2, promoteScore / 2, promoteScore / 2, promoteScore / 2, promoteScore / 2, promoteScore / 2, promoteScore / 2],
     [5, 5, 5, 5, 5, 5, 5, 5],
     [4, 4, 4, 4, 4, 4, 4, 4],
-    [3, 3, 3, 3, 3, 3, 3, 3],
+    [2, 2, 2, 2, 2, 2, 2, 2],
     [2, 2, 2, 2, 2, 2, 2, 2],
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -19,7 +19,7 @@ export type EvaluateOptions = {
     pieceValue?: boolean
     pawnAdvancement?: boolean
     mobility?: boolean
-    scoreComparer?: (a: MoveNode, b: MoveNode) => number
+    console?: boolean
 }
 export enum capturePoints {
     pawn = 150,
@@ -28,6 +28,14 @@ export enum capturePoints {
     rook = 500,
     queen = 900,
     king = 9000,
+}
+const weights: { [key: number]: number } = {
+    32: capturePoints.pawn,
+    8: capturePoints.knight,
+    4: capturePoints.bishop,
+    16: capturePoints.rook,
+    2: capturePoints.queen,
+    1: capturePoints.king,
 }
 export const evaluate = (fenState: BinaryBoard, options: EvaluateOptions): number => {
     const considerPieceValue = options?.pieceValue ?? true
@@ -57,26 +65,16 @@ export const evaluate = (fenState: BinaryBoard, options: EvaluateOptions): numbe
         loopThroughBoard(fenState, (piece: BinaryPiece) => {
             pieces.set(piece.typeAndColor, (pieces.get(piece.typeAndColor) ?? 0) + 1)
         })
-        // console.log('pieces:', pieces)
 
-        const weights: { [key: number]: number } = {
-            32: capturePoints.pawn,
-            8: capturePoints.knight,
-            4: capturePoints.bishop,
-            16: capturePoints.rook,
-            2: capturePoints.queen,
-            1: capturePoints.king,
-        }
+        for (let pieceType = 1; pieceType <= 32; pieceType *= 2) {
+            const weight = weights[pieceType]
+            const score = weight * (pieces.get(pieceType | white) - pieces.get(pieceType | black))
+            
+            fullScore += score
 
-        for (let i = 1; i <= 32; i *= 2) {
-            const weight = weights[i]
-            const score = weight
-                * (pieces.get(i | white) - pieces.get(i | black))
             throwIfNaN(score, () => console.log(
                 'score:', score, 'weight:', weight, 'pieces:',
-                pieces.get(i | white), pieces.get(i | black)))
-            fullScore += score
-            
+                pieces.get(pieceType | white), pieces.get(pieceType | black)))
         }
     }
     // pawn advancement
@@ -106,6 +104,7 @@ export const evaluate = (fenState: BinaryBoard, options: EvaluateOptions): numbe
         })
 
     }
+
 
     return fullScore
 }

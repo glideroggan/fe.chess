@@ -1,5 +1,5 @@
-import { BinaryBoard, black, isWhite, king, move, pawn, queen, rook, undo, white } from "./binaryBoard"
-import { Pos } from "./utils"
+import { BinaryBoard, black, isWhite, king, move, pawn, queen, rook, undo, white } from "../services/binaryBoard"
+import { Pos } from "../services/utils"
 
 describe('translate FEN', () => {
     it('should translate', () => {

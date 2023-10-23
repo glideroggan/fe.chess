@@ -1,5 +1,4 @@
-import { getSpecificPiece, getPiece } from "./FEN"
-import { BinaryBoard, BinaryPiece, black, isWhite, king, move, white } from "./binaryBoard"
+import { BinaryBoard, BinaryPiece, black, getPiece, getSpecificPiece, isWhite, king, move, pawn, white } from "./binaryBoard"
 import { getAllPossibleMoves, getMovesTowards, getPossibleMoves } from "./moves"
 import { Pos } from "./utils"
 
@@ -7,28 +6,6 @@ export let boardState: BinaryBoard = BinaryBoard.parse('rnbqkbnr/pppppppp/8/8/8/
 export let movingPiece: BinaryPiece
 export let captured:BinaryPiece | null = null
 
-// export type Color = 'white' | 'black'
-// export class Color {
-//     static black:Color = new Color(-1)
-//     static white:Color = new Color(1)
-//     binary: number
-    
-//     static from(type: string): Color {
-//         return new Color(type == type.toUpperCase() ? 1 : -1)
-//     }
-//     private constructor(num: number) {
-//         this.num = num
-//         this.binary = num == 1 ? 0b0001000000 : 0b0010000000
-//     }
-    
-//     num: number
-//     toString() {
-//         return this.num == 1 ? 'white' : 'black'
-//     }
-//     equals(other: Color) {
-//         return this.num == other.num
-//     }
-// }
 export type PieceType =
     'p' | 'r' | 'n' | 'b' | 'q' | 'k' |
     'P' | 'R' | 'N' | 'B' | 'Q' | 'K'
@@ -47,28 +24,6 @@ export class Move {
         return new Move(this.from.clone(), this.to.clone())
     }
 }
-// export class Piece {
-//     color: Color
-//     type: PieceType
-//     num: number
-//     pos: Pos
-
-//     constructor(char: string, rank: number, file: number, color:Color) {
-//         this.type = char as PieceType
-//         this.num = translateToNumber(this.type)
-//         this.pos = new Pos(file, rank)
-//         this.color = color
-//     }
-
-//     static fromBinary(p:number, pos: Pos):Piece {
-//         const color = p & white ? Color.white : Color.black
-//         const type = translateToPiece(p, color)
-//         return new Piece(type, pos.y, pos.x, color)
-//     }
-//     static from(p: PieceType | string, pos: Pos) {
-//         return new Piece(p, pos.y, pos.x, Color.from(p))
-//     }
-// }
 
 export const startMoving = (pos: Pos) => {
     // record the piece that is being moved
@@ -89,16 +44,12 @@ export const isCheck = (state: BinaryBoard): {check:Pos[], end?:{mate:boolean,po
     }
     const mate = getAllPossibleMoves(state, state.currentPlayer)
     if (mate.length == 0) {
-        kingPos = getSpecificPiece(state, state.currentPlayer)
+        kingPos = getSpecificPiece(state, state.currentPlayer | king)
         return {check: res, end: {mate: true, pos: kingPos}}
     }
     
     return {check: res}
 }
-
-// export const resetBoard = () => {
-//     boardState = FEN.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-// }
 
 export const gameValidMove = (state:BinaryBoard, from: Pos, to: Pos): boolean => {
     // check if valid move for piece
@@ -123,14 +74,30 @@ export const gameMovePiece = (from: Pos, to: Pos): boolean => {
         callback();
     })
     const color = boardState.currentPlayer
-    captured = move(boardState, from, to)
+    let results = move(boardState, from, to)
+    captured = results.captured
+    
+    
+
+    boardState.boardData._halfMoveClock++
+    if (captured != null || results.pieceMoved.type == pawn) {
+        boardState.boardData._halfMoveClock = 0
+    }
 
     boardState.playerChangeObservers.forEach((callback) => {
         callback(boardState.currentPlayer);
     });
-    // TODO: maybe wrap this in a nice UI instead
     console.log(`${isWhite(color) ? 'white' : 'black'} move:`, from.toString(), '->', to.toString())
     console.log(boardState.boardData.getFullBoard.toString())
+
+    // TODO: do check and mate checks here instead
+    const {check, end} = isCheck(boardState)
+    if (end) {
+        console.log(end.mate ? 'Checkmate' : 'Stalemate')
+        boardState.checkmateObservers.forEach((callback) => {
+            callback();
+        });
+    }
 
     movingPiece = null
     return true

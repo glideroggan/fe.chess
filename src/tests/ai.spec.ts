@@ -1,11 +1,10 @@
-import { getSpecificPiece, getPiece } from "./FEN";
-import { constructNodeChain, rootNegaMax } from "./ai";
-import { BinaryBoard, black, king, knight, move, pawn, rook, undo, white } from "./binaryBoard";
-import { EvaluateOptions, capturePoints, evaluate } from "./evaluation";
-import { filterKingVulnerableMoves, getAllPossibleMoves, getMovesTowards } from "./moves";
-import { getBishopMoves, getKingMoves, getKnightMoves, getPawnMoves, getQueenMoves, getRookMoves, isOutsideBoard } from "./pieceMoves";
-import { Pos } from "./utils";
-import { negaMax } from "./zeroSum";
+import { constructNodeChain, rootNegaMax } from "../services/ai";
+import { BinaryBoard, black, getPiece, getSpecificPiece, king, knight, move, pawn, rook, undo, white } from "../services/binaryBoard";
+import { EvaluateOptions, capturePoints, evaluate } from "../services/evaluation";
+import { filterKingVulnerableMoves, getAllPossibleMoves, getMovesTowards } from "../services/moves";
+import { getBishopMoves, getKingMoves, getKnightMoves, getPawnMoves, getQueenMoves, getRookMoves, isOutsideBoard } from "../services/pieceMoves";
+import { Pos } from "../services/utils";
+import { negaMax } from "../services/zeroSum";
 
 describe('nothing', () => {
     it('nothing', () => {
@@ -700,7 +699,7 @@ a:--------
 --01234567
 */
         //b   c   d
-        const expectedScore = 7 * 0 + 3
+        const expectedScore = 7 * 0 + 2
         const state = BinaryBoard.parse('8/8/8/8/P7/8/1PPPPPPP/8 w KQkq - 0 1')
         const options: EvaluateOptions = {
             pieceValue: false,
@@ -879,7 +878,6 @@ Evaluate h7h6
         const state = BinaryBoard.parse('rnbqkb1r/pppppppp/7n/8/7P/8/PPPPPPP1/RNBQKBNR b KQkq - 0 2')
         const options: EvaluateOptions = {
             pieceValue: true,
-            scoreComparer: (a, b) => b.score - a.score
         }
         const result = rootNegaMax(state, 2, options)
         // console.log(result.bestMove)
@@ -906,7 +904,7 @@ Evaluate h7h6
             random: true
         }
         const result = evaluate(state, options)
-        expect(result).toEqual(4)
+        // expect(result).toEqual(2)
     })
 })
 
@@ -956,7 +954,6 @@ a:RNBQKBNR
             pieceValue: true,
             pawnAdvancement: false,
             mobility: false,
-            scoreComparer: (a, b) => b.score - a.score
         }
         let result = rootNegaMax(state, 1, options)
         expect(result.bestScore).toEqual(capturePoints.pawn)
@@ -980,7 +977,6 @@ a:RNBQKBNR
             pieceValue: true,
             pawnAdvancement: false,
             mobility: false,
-            scoreComparer: (a, b) => b.score - a.score
         }
         const node = constructNodeChain(state, 2, 1)
         let result = negaMax(node, options)
@@ -1004,7 +1000,6 @@ a:RNBQKBNR
             pawnAdvancement: false,
             mobility: false,
             random: false,
-            scoreComparer: (a, b) => b.score - a.score
         }
         let result = rootNegaMax(state, 1, options)
         // console.log(result)

@@ -1,20 +1,38 @@
 BUGS:
-- after change of color structure, make sure that any comparisons of colors are done with "equals" and not "==" or "==="
+- color isn't set on two captures in a row in the capturebox
 - there is a white line in the capturebox at the bottom when a white rook is there
-- when two captures happen after each other, then last one will be "cleaned", so last capture is not shown
 TODO:
-- add caching of the FEN and moves
-  - need unittests
+- add the missing moves (en passant, castling, promotion)
+  - castling
+  
+- let the AI suggest a move for white
+  - Color the suggested move
+    - the color maybe could be fixed programatically, so that we can slightly change the color of the suggested move
+  - hide it behind an option in the game
+  - 
+- Protection (https://www.cs.cornell.edu/boom/2004sp/ProjectArch/Chess/algorithms.html#staticboard)
+
+- docker
+  - put it in docker
+- deploy
+  - deploy it to server
+  - develop a "deployment" server app that can run on server and pick up github deployment hooks
+
+- how can we reduce the moments were the AI is gaining nothing by willingly capture an equal valued piece, and then losing it in the next move?
+  - rn2k1nr/ppp2ppp/5q2/3Bp3/1b1PP1b1/2P2N2/PP3PPP/RNBQK2R b KQkq - 0 6
+- extend FEN notation
+  - castling
+      Castling availability: If neither side has the ability to castle, this field uses the character -. Otherwise, this field contains one or more letters: "K" if White can castle kingside, "Q" if White can castle queenside, "k" if Black can castle kingside, and "q" if Black can castle queenside. A situation that temporarily prevents castling does not prevent the use of this notation.
+- rules
+  - fifty-fifty rule
 - status bar
   - TESTING
   - write unit test that the call is being made to the callback
 - status table on bottom on mobile
-- add the missing moves (en passant, castling, promotion)
-- fix time to show 00:00.00
+
 - bestmove from AI should contain the logic that came to that conclusion
   - include the "max" score model in the bestmove
 - undo button
-
 - Add touch support (mobile)
   - https://stackoverflow.com/questions/71313587/what-is-the-equivalent-of-dragstart-event-datatransfer-setdata-for-touchstart 
 

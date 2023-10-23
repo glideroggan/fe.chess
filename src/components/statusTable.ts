@@ -34,16 +34,17 @@ export class StatusTable extends HTMLElement {
             current = color
             this.setTurn(isWhite(color) ? 'white' : 'black')
         })
-        // TODO: add back
-        // boardState.checkMateObservers.push(() => {
-        //     this.status.classList.remove('hidden')
-        //     this.status.innerText = 'Checkmate!'
-        // })
+        boardState.checkmateObservers.push(() => {
+            this.status.classList.remove('hidden')
+            this.status.innerText = 'Checkmate!'
+        })
 
         setInterval(() => {
             this.timers[current] = this.timers[current] || 0
             this.timers[current]++
-            this.waiting.innerText = `Waiting: ${this.timers[current]}s`
+            const minutes = Math.floor(this.timers[current] / 60).toString().padStart(2, '0')
+            const seconds = (this.timers[current] % 60).toString().padStart(2, '0')
+            this.waiting.innerText = `Waiting: ${minutes}:${seconds}`
         }, 1000)
 
         scoreObservers.push(this.setScore.bind(this))

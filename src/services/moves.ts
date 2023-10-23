@@ -1,6 +1,5 @@
-import { getSpecificPiece, getPiece } from "./FEN";
 import { loopThroughBoard } from "./ai";
-import { BinaryBoard, BinaryPiece, getColor, king, knight, move, undo, whatType } from "./binaryBoard";
+import { BinaryBoard, BinaryPiece, getColor, getPiece, getSpecificPiece, king, knight, move, undo, whatType } from "./binaryBoard";
 import { getKey } from "./perf";
 import { getBishopMoves, getKingMoves, getKnightMoves, getPawnMoves, getQueenMoves, getRookMoves } from "./pieceMoves";
 import { Move } from "./rules";
@@ -19,13 +18,13 @@ export const getAllPossibleMoves = (state: BinaryBoard, color: number): Move[] =
     // we don't need to cache the whole thing, just the board, whose turn it is
     // and what kind of special moves are available
     // this way we should be able to get more cache hits
-    // const cacheKey = getKey(state.boardData.getBoard, color.toString())
-    // const cached = allPossibleMoveCache.entry.get(cacheKey)
-    // if (cached !== undefined) {
-    //     // console.log('getAllPossibleMoves-cache hit: ', cached.hit)
-    //     allPossibleMoveCache.hit++
-    //     return cached
-    // }
+    const cacheKey = getKey(state.boardData.getBoard, color.toString())
+    const cached = allPossibleMoveCache.entry.get(cacheKey)
+    if (cached !== undefined) {
+        // console.log('getAllPossibleMoves-cache hit: ', cached.hit)
+        allPossibleMoveCache.hit++
+        return cached
+    }
 
     const moves: Move[] = []
     loopThroughBoard(state, (piece: BinaryPiece) => {
@@ -36,7 +35,7 @@ export const getAllPossibleMoves = (state: BinaryBoard, color: number): Move[] =
         results.valid.forEach((pos) => moves.push(new Move(piece.pos, pos)))
     })
 
-    // allPossibleMoveCache.entry.set(cacheKey, moves)
+    allPossibleMoveCache.entry.set(cacheKey, moves)
     return moves
 }
 
@@ -125,22 +124,6 @@ export const filterKingVulnerableMoves = (state: BinaryBoard, piece: BinaryPiece
 
 export const getMoves = (fenState: BinaryBoard, piece: BinaryPiece, kingCheck: boolean = true): Pos[] => {
     return getMovesMap[whatType(piece.type)](fenState, piece.color, piece.pos)
-
-    // switch (piece.type.toLowerCase()) {
-    //     case "p":
-    //         return getPawnMoves(fenState, piece.color, piece.pos)
-    //     case "n":
-    //         return getKnightMoves(fenState, piece.color, piece.pos)
-    //     case "r":
-    //         return getRookMoves(fenState, piece.color, piece.pos)
-    //     case "b":
-    //         return getBishopMoves(fenState, piece.color, piece.pos)
-    //     case "q":
-    //         return getQueenMoves(fenState, piece.color, piece.pos)
-    //     case "k":
-    //         return getKingMoves(fenState, piece.color, piece.pos)
-    // }
-    // throw new Error(`Unknown piece type '${piece.type}'`)
 }
 
 export const getTravelPath = (state:BinaryBoard, from: Pos, to: Pos): Pos[] => {

@@ -1,6 +1,6 @@
-import { BinaryBoard, BinaryPiece, BoardData, bishop, black, isWhite, king, knight, move, pawn, queen, rook, undo, white } from "./binaryBoard";
+import { BinaryBoard, BinaryPiece, bishop, black, getPiece, isWhite, king, knight, move, pawn, queen, rook, translateNumber2Char, undo, white } from "./binaryBoard";
 import { EvaluateOptions } from "./evaluation";
-import { getAllPossibleMoves, getPossibleMoves } from "./moves";
+import { getAllPossibleMoves } from "./moves";
 import { Move, PieceType } from "./rules";
 import { Pos } from "./utils";
 import { negaMax } from "./zeroSum";
@@ -30,20 +30,21 @@ export type AiMoveResult = {
 export type MoveNode = {
     moves: MoveNode[]
     score?: number
-    color: 1 | -1
-    state: BoardData
+    color: number   // -1 black 1 white
+    state: BinaryBoard
     parentMoveDisplay?: string
-    parentMove: Move
+    parentMove?: Move
+    parent?: MoveNode    
 }
-export const constructNodeChain = (state: BinaryBoard, depth: number, player: 1 | -1, parentMove?: Move): MoveNode | null => {
+export const constructNodeChain = (state: BinaryBoard, depth: number, player: number, parent?: MoveNode, parentMove?: Move): MoveNode | null => {
 
-    const node: MoveNode = { moves: [], color: player, state: state.clone().boardData, parentMove: parentMove, parentMoveDisplay: `${-player}:${parentMove?.from.toString()}->${parentMove?.to.toString()}` }
+    const node: MoveNode = { parent: parent, moves: [], color: player, state: state.clone(), parentMove: parentMove, parentMoveDisplay: `${parentMove?.from.toString()}->${parentMove?.to.toString()}` }
     if (depth == 0) return node
 
     const moves = getAllPossibleMoves(state, player == 1 ? white : black)
     for (const pieceMove of moves) {
         move(state, pieceMove.from, pieceMove.to)
-        node.moves.push(constructNodeChain(state, depth - 1, player == 1 ? -1 : 1, pieceMove))
+        node.moves.push(constructNodeChain(state, depth - 1, -player, node, pieceMove))
         undo(state)
     }
     return node
@@ -52,26 +53,29 @@ export const constructNodeChain = (state: BinaryBoard, depth: number, player: 1 
 export const rootNegaMax = (state: BinaryBoard, depth: number, options: EvaluateOptions): AiMoveResult => {
     // important that player variable in this stage is 1 or -1
     const rootNode = constructNodeChain(state, depth, isWhite(state.currentPlayer) ? 1 : -1)
-    const score = negaMax(rootNode, options)
+    negaMax(rootNode, options)
+
+    if (options.console) {
+        let str = ''
+        explore(rootNode, {
+            f: printOut,
+            strCollector: (s: string) => str += s
+        })
+        console.log('[AI] negamax tree:\n', str)
+    }
 
     // find the node with the best score
-    const max = rootNode.moves.length > 0
-        ? options.scoreComparer != null
-            ? rootNode.moves.filter(s => s != null).sort(options.scoreComparer)[0]
-            : rootNode.moves.reduce((acc, cur) => acc.score > cur.score ? acc : cur)
-        : null
-    onScoreUpdate(max?.score ?? 0)
+    const bestScore = rootNode.moves.reduce((a: number, b: MoveNode) => Math.max(a, b.score), -Infinity)
+    const nodes = rootNode.moves.filter((move) => move.score == bestScore)
+    const bestMove = nodes[Math.floor(Math.random() * nodes.length)]
+    onScoreUpdate(bestMove?.score ?? 0)
     return {
-        bestMove: max?.parentMove,
-        bestScore: max?.score,
-        checkmate: max == null,
+        bestMove: bestMove?.parentMove,
+        bestScore: bestMove?.score,
+        checkmate: bestMove == null,
         root: rootNode,
     };
 }
-
-
-
-
 
 
 export const loopThroughBoard = (state: BinaryBoard, callback: (piece: BinaryPiece) => void) => {
@@ -85,23 +89,8 @@ export const loopThroughBoard = (state: BinaryBoard, callback: (piece: BinaryPie
             callback(piece)
         }
     }
-    // for (let i = 0; i < str.length; i++) {
-    //     if (str[i] == '/') {
-    //         rankIndex--
-    //         file = 0
-    //         continue
-    //     }
-    //     if (!isNaN(parseInt(str[i]))) {
-    //         file += parseInt(str[i])
-    //         continue
-    //     }
-    //     const piece = new Piece(str[i], rankIndex, file, getColor(str[i]))
-    //     callback(piece)
-    //     file++
-    // }
 }
 
-// export const getColor = (char: string): Color => char === char.toUpperCase() ? Color.white : Color.black
 export const translateToNumber = (type: PieceType): number => {
     switch (type) {
         case 'k': case 'K': return 1
@@ -130,6 +119,26 @@ export const translateToPiece = (binaryType: number): string => {
     }
 }
 
+export const printOut = (n: MoveNode, strCollector: (str: string) => void) => {
+    const c = -n.color == 1 ? 'w' : 'b'
+    // check if there was a capture by looking at the state before this node
+    const previousState = n.parent?.state
+    let captured = 0
+    if (previousState != undefined && n.parentMove != null && n.parentMove.to != null) {
+        const previousPiece = getPiece(previousState, n.parentMove.to)
+        if (previousPiece != null) {
+            captured = getPiece(n.state, n.parentMove.to)?.typeAndColor != previousPiece?.typeAndColor ? previousPiece?.typeAndColor : 0
+        }
 
+    }
+    strCollector(`${c}: ${n.parentMoveDisplay?.toString()} (${n.score}) ${translateNumber2Char(captured)} ${n.state.boardData.getFullBoard}\n`)
+}
+export const explore = (n: MoveNode, store: any) => {
+    if (n == null) return
+    store.f(n, store.strCollector)
+    if (n.moves.length == 0) return
+    const best = n.moves.reduce((acc, cur) => acc.score > cur.score ? acc : cur)
+    explore(best, store)
+}
 
 

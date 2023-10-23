@@ -1,5 +1,4 @@
-import { getPiece } from "./FEN"
-import { BinaryBoard, BinaryPiece, bishop, king, knight, pawn, queen, rook, white } from "./binaryBoard"
+import { BinaryBoard, bishop, getPiece, king, knight, pawn, queen, rook, white } from "./binaryBoard"
 import { Pos } from "./utils"
 
 type PieceMove = {
@@ -158,7 +157,6 @@ export const getRookMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[]
                     moves.push(newPos)
                     step++
                     newPos = pos.add(forward * step, 0)
-                    // newPos = new FenPos(String.fromCharCode(pos.rank.charCodeAt(0) + forward * step), pos.file)
                     if (isOutsideBoard(newPos)) break
                     piece = getPiece(state, newPos)
                 }
@@ -170,14 +168,12 @@ export const getRookMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[]
             }
             if (move.file != null) {
                 let newPos = pos.add(0, move.file * step)
-                // let newPos = new FenPos(String.fromCharCode(pos.rank.charCodeAt(0)), pos.file + move.file)
                 if (isOutsideBoard(newPos)) continue
                 let piece = getPiece(state, newPos)
                 while (piece == null) {
                     moves.push(newPos)
                     step++
                     newPos = pos.add(0, move.file * step)
-                    // newPos = new FenPos(String.fromCharCode(pos.rank.charCodeAt(0)), pos.file + move.file * step)
                     if (isOutsideBoard(newPos)) break
                     piece = getPiece(state, newPos)
                 }
@@ -189,7 +185,6 @@ export const getRookMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[]
             }
         }
     }
-    // console.log('moves rook', moves.length)
     return moves;
 }
 
@@ -199,11 +194,6 @@ export const isOutsideBoard = (pos: Pos): boolean => {
 
 
 export const getPawnMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[] => {
-    // guard: no need really, and should only be used for debugging
-    // const p = getPiece(state, pos)
-    // if (p == null) {
-    //     throw new Error(`No pawn at position: ${pos.toString()}, rank '${getRank(state, pos.rank)}'`)
-    // }
     if (getPiece(state, pos).type != pawn) throw new Error('Not a pawn')
 
     // PERF: maybe small perf gain by caching only the range of the board that the pawn is using
@@ -212,19 +202,16 @@ export const getPawnMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[]
     // TODO: we should look if we can make the "forward" not be specific to color
     for (const move of pawnMoves) {
         const forward = color == white ? move.forward : -move.forward
-        // console.log('pawn', pos.toString(), move, 'color', color, 'forward', forward)
         const newPos = pos.add(forward, move.file)
         if (isOutsideBoard(newPos)) continue
 
         const targetPosPiece = getPiece(state, newPos)
-        // console.log('pawn', pos.toString(), newPos.toString(), targetPosPiece?.toString())
         if (move.attackMove) {
             if (targetPosPiece != null && targetPosPiece.color != color) {
                 moves.push(newPos)
             }
         } else if (targetPosPiece == null) {
             if (move.startMove) {
-                // console.log('startmove', pos.toString())
                 if (pos.rank == 'b') {
                     // no jumps allowed
                     const p = getPiece(state, pos.add(1, 0))
