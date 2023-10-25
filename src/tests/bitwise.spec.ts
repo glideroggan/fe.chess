@@ -1,3 +1,4 @@
+import "../services/binaryBoard"
 import { bishop, black, getColor, king, knight, pawn, queen, rook, whatType, white } from "../services/binaryBoard"
 
 describe('bitwise', () => {

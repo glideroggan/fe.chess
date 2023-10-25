@@ -1,3 +1,5 @@
+import { bishop, black, king, knight, pawn, queen, rook, white } from "./binaryBoard"
+
 export class Pos {
     
     display: string
@@ -13,7 +15,12 @@ export class Pos {
         if (this.y < 0 || this.y > 7) throw new Error('Invalid rank')
         return Pos.rankArray[this.y]
     }
-    constructor(xFile: number, yRank: number) {
+    constructor(xFile: number|string, yRank?: number) {
+        if (typeof xFile === 'string') {
+            const pos = Pos.parse(xFile)
+            xFile = pos.x
+            yRank = pos.y
+        }
         this.x = xFile
         // if (xFile < 0 || xFile > 7) console.warn('Invalid file: ' + xFile.toString())
         this.y = yRank
@@ -51,7 +58,10 @@ export class Pos {
     add(rank: number, file: number): Pos {
         return new Pos(this.x + file, this.y + rank)
     }
-    equals(other: Pos): boolean {
+    equals(other: Pos|string): boolean {
+        if (typeof other === 'string') {
+            other = Pos.parse(other)
+        }
         return this.x === other.x && this.y === other.y
     }
     clone(): Pos {
@@ -60,4 +70,47 @@ export class Pos {
     toString(): string {
         return `${this.rank}${this.file}`
     }
+}
+
+const translateChar2Binary = (char: string): number => {
+    switch (char) {
+        case 'k': return king | black
+        case 'q': return queen | black
+        case 'b': return bishop | black
+        case 'n': return knight | black
+        case 'r': return rook | black
+        case 'p': return pawn | black
+        case 'K': return king | white
+        case 'Q': return queen | white
+        case 'B': return bishop | white
+        case 'N': return knight | white
+        case 'R': return rook | white
+        case 'P': return pawn | white
+        default: throw new Error('Invalid character: ' + char)
+    }
+}
+export const translateFen2Binary = (fen: string): number[][] => {
+    const data: number[][] = []
+    let rankIndex = 7
+    let file = 0
+    for (let i = 0; i < fen.length; i++) {
+        if (fen[i] == '/') {
+            rankIndex--
+            file = 0
+            continue
+        }
+        if (!isNaN(parseInt(fen[i]))) {
+            file += parseInt(fen[i])
+            for (let j = 0; j <= file; j++) {
+                if (data[rankIndex] == undefined) data[rankIndex] = []
+                data[rankIndex][file] = 0
+            }
+            continue
+        }
+        if (data[rankIndex] == undefined) data[rankIndex] = [0, 0, 0, 0, 0, 0, 0, 0]
+
+        data[rankIndex][file] = translateChar2Binary(fen[i])
+        file++
+    }
+    return data
 }

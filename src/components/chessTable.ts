@@ -1,8 +1,8 @@
 import { AiState, rootNegaMax, translateToPiece } from '../services/ai';
-import { BinaryPiece, black, getPiece, isWhite } from '../services/binaryBoard';
+import { BinaryPiece, black, boardState, getPiece, isWhite } from '../services/binaryBoard';
 import { EvaluateOptions } from '../services/evaluation';
 import { getTravelPath, allPossibleMoveCache, getPossibleMovesCache, getMovesTowardsCache } from '../services/moves';
-import { Move, boardState, captured, gameMovePiece, isCheck } from '../services/rules';
+import { Move, captured, gameMovePiece, isCheck } from '../services/rules';
 import { Pos } from '../services/utils';
 import { BoardCell } from './boardCell';
 import { ChessPiece } from './chessPiece';
@@ -93,10 +93,11 @@ export class ChessTable extends HTMLElement {
         console.log('aiMove...Done')
         if (move.bestMove != null) {
             console.log('bestMove:', move.bestMove, 'bestScore:', move.bestScore)
-            gameMovePiece(move.bestMove.from, move.bestMove.to)
+            const results = gameMovePiece(move.bestMove.from, move.bestMove.to)
             this.dispatchEvent(new CustomEvent('moved', {
                 detail: {
-                    from: move.bestMove.from, to: move.bestMove.to
+                    moveResults: results,
+                    move: {from: move.bestMove.from, to: move.bestMove.to}
                 }, bubbles: true, composed: true
             }))
         }
@@ -167,6 +168,7 @@ export class ChessTable extends HTMLElement {
     //         }
     //     })
     // }
+    // TODO: use a typed event
     async onMoved(moveEvent: CustomEvent) {
         console.log('getPossibleMovesCache hits: ', getPossibleMovesCache.hit)
         console.log('allPossibleMoveCache hits: ', allPossibleMoveCache.hit)
@@ -182,24 +184,40 @@ export class ChessTable extends HTMLElement {
             cell.classList.remove('ai')
         }
         // update UI
-        const fromCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.from.toString()}]`)
-        const toCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.to.toString()}]`)
+        const fromCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.move.from.toString()}]`)
+        const toCell = this.root.querySelector(`.cell[pos=${moveEvent.detail.move.to.toString()}]`)
         // remove the piece from the old cell
         this.handleRemovalOfPiece(toCell);
 
+        // handle special moves UI updates
+        if (moveEvent.detail.moveResults.special?.moves?.length > 0) {
+            // we have additional pieces that moved
+            // update UI
+            for (const m of moveEvent.detail.moveResults.special.moves) {
+                console.log('special move:', m)
+                const fromCell = this.root.querySelector(`.cell[pos=${m.from.toString()}]`)
+                const toCell = this.root.querySelector(`.cell[pos=${m.to.toString()}]`)
+                // remove the piece from the old cell
+                this.handleRemovalOfPiece(toCell);
+                const piece = fromCell.querySelector('chess-piece')
+                piece.setAttribute('pos', m.to.toString())
+                toCell.appendChild(piece)
+            }
+        }
+
         const piece = fromCell.querySelector('chess-piece')
-        piece.setAttribute('pos', moveEvent.detail.to.toString())
+        piece.setAttribute('pos', moveEvent.detail.move.to.toString())
         toCell.appendChild(piece)
 
         this.doKingCheck()
-        this.highlightMove(moveEvent.detail.from, moveEvent.detail.to)
+        this.highlightMove(moveEvent.detail.move.from, moveEvent.detail.move.to)
 
         await new Promise(r => setTimeout(r, 50))
         // make a AI move if AI is enabled
         if (this.getAttribute('ai') === 'true' && boardState.currentPlayer === black) {
             // give time to render
             self.dispatchEvent(new Event('aiMove'))
-        } else {
+        } else if (false) {
             this.giveAIsuggestion().then((move) => {
                 // color start and end cell
                 const fromCell = this.root.querySelector(`.cell[pos=${move.from.toString()}]`)
@@ -244,12 +262,10 @@ export class ChessTable extends HTMLElement {
     highlightMove(from: Pos, to: Pos) {
         // highlight the cells that the piece moved in
         // when a piece "jump", like the knight, then highlight the source and destination only
-
-        getTravelPath(boardState, from, to).reduce((prev, pos): Pos => {
+        const piece = getPiece(boardState, to)
+        getTravelPath(from, to, piece.type).reduce((prev, pos): Pos => {
             let cell = this.root.querySelector(`.cell[pos=${pos.toString()}]`)
             let prevCell = this.root.querySelector(`.cell[pos=${prev.toString()}]`)
-
-
 
             if (!prev.equals(pos)) {
                 let dir = prev.direction(pos)

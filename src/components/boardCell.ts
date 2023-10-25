@@ -1,4 +1,5 @@
-import { gameMovePiece, movingPiece, gameValidMove, boardState } from '../services/rules'
+import { boardState } from '../services/binaryBoard'
+import { gameMovePiece, movingPiece, gameValidMove } from '../services/rules'
 import { Pos } from '../services/utils'
 
 export class BoardCell extends HTMLElement {
@@ -56,8 +57,9 @@ export class BoardCell extends HTMLElement {
         const from = movingPiece.pos
         const to = Pos.parse(this.getAttribute('pos'))
         
-        const success = gameMovePiece(from, to)
-        this.dispatchEvent(new CustomEvent('moved', { detail: {from:from, to:to}, bubbles: true, composed: true }))    
+        const results = gameMovePiece(from, to)
+        this.dispatchEvent(new CustomEvent('moved', { 
+            detail: {moveResults: results, move: {from:from, to:to}}, bubbles: true, composed: true }))    
     }
     async connectedCallback() {
         const html = await import('./boardCell-template.html');

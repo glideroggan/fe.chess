@@ -1,5 +1,5 @@
 import { loopThroughBoard } from "./ai";
-import { BinaryBoard, BinaryPiece, getColor, getPiece, getSpecificPiece, king, knight, move, undo, whatType } from "./binaryBoard";
+import { BinaryBoard, BinaryPiece, getSpecificPiece, king, knight, move, undo, whatType } from "./binaryBoard";
 import { getKey } from "./perf";
 import { getBishopMoves, getKingMoves, getKnightMoves, getPawnMoves, getQueenMoves, getRookMoves } from "./pieceMoves";
 import { Move } from "./rules";
@@ -58,38 +58,36 @@ export const getPossibleMoves = (state: BinaryBoard, piece: BinaryPiece, kingChe
     }
 
     // guard
-    // console.log('piece:', piece)
     if (piece.type === 0) throw new Error('Cant get moves for empty piece')
-
-    // const t = whatType(piece.type)
+    
     const f = getMovesMap[piece.type]
-    // const c = getColor(piece.type)
     let pMoves: Pos[] = f(state, piece.color, piece.pos)
     
     // check that all moves returned do not put the king in check
-    // console.log('1-in: ', piece.type, t, 'out:', f, 'moves:', pMoves.length)
     if (kingCheck) {
         const results = filterKingVulnerableMoves(state, piece, pMoves)
         pMoves = results.valid
     }
     getPossibleMovesCache.entry.set(cacheKey, pMoves)
-    // console.log('2-in: ', piece.type, t, 'out:', f, 'moves:', pMoves.length)
     return pMoves
 }
 
-export const getMovesTowards = (state: BinaryBoard, targetPos: Pos): Move[] => {
+export const getMovesTowards = (state: BinaryBoard, targetPos: Pos, sameColor: number, filter?:number): Move[] => {
     // PERF: getBoard is expensive, so maybe not worth it, unless we get that part less expensive
-    const cacheKey = getKey(state.boardData.getBoard, targetPos.toString())
+    const cacheKey = getKey(state.boardData.getBoard, targetPos.toString(), sameColor.toString(), filter?.toString())
     const cached = getMovesTowardsCache.entry.get(cacheKey)
     if (cached !== undefined) {
         getMovesTowardsCache.hit++
         return cached
     }
     // go through whole board and check valid moves against this position
-    const targetColor = getPiece(state, targetPos).color
     const moves: Move[] = []
+    // PERF: a fast way here could be to first get remaining pieces of the color
+    // then loop through those
     loopThroughBoard(state, (piece: BinaryPiece) => {
-        if (piece.color === targetColor) return
+        if (piece.color === sameColor) return
+        // use the filter to filter out pieces of type and color
+        if (filter !== undefined && piece.type == filter) return
 
         let arr = getPossibleMoves(state, piece, false)
         arr.filter((pos) => pos.equals(targetPos))
@@ -111,7 +109,7 @@ export const filterKingVulnerableMoves = (state: BinaryBoard, piece: BinaryPiece
 
         // check if king is in check
         const kingPos = getSpecificPiece(state, king | piece.color)
-        const possibleMoves = getMovesTowards(state, kingPos)
+        const possibleMoves = getMovesTowards(state, kingPos, piece.color)
         undo(state)
         if (possibleMoves.length > 0) {
             dangerMoves.push(...possibleMoves)
@@ -126,10 +124,9 @@ export const getMoves = (fenState: BinaryBoard, piece: BinaryPiece, kingCheck: b
     return getMovesMap[whatType(piece.type)](fenState, piece.color, piece.pos)
 }
 
-export const getTravelPath = (state:BinaryBoard, from: Pos, to: Pos): Pos[] => {
-    if (getPiece(state, to).type === knight) {
-        return [from, to]
-    }
+export const getTravelPath = (from: Pos, to: Pos, type:number): Pos[] => {
+    if (type === knight) return [from, to]
+
     const dx = Math.sign(to.x - from.x)
     const dy = Math.sign(to.y - from.y)
     const path: Pos[] = [from]

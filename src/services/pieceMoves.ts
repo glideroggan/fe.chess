@@ -1,4 +1,6 @@
 import { BinaryBoard, bishop, getPiece, king, knight, pawn, queen, rook, white } from "./binaryBoard"
+import { getTravelPath } from "./moves"
+import { isKingMovingThroughCheck } from "./rules"
 import { Pos } from "./utils"
 
 type PieceMove = {
@@ -8,6 +10,7 @@ type PieceMove = {
     continously?: boolean
     jump?: boolean
     startMove?: boolean
+    castling?: 'kingside' | 'queenside'
 }
 
 const kingMoves: PieceMove[] = [
@@ -57,16 +60,70 @@ const pawnMoves: PieceMove[] = [
     { forward: 2, file: 0, attackMove: false, startMove: true },
     { forward: 1, file: -1, attackMove: true },
     { forward: 1, file: 1, attackMove: true }]
-export const getKingMoves = (state: BinaryBoard, color:number, pos:Pos): Pos[] => {
+
+
+export const getKingMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[] => {
     if (getPiece(state, pos).type != king) throw new Error('Not a king')
     let moves: Pos[] = []
-    
+
     for (const move of kingMoves) {
         const newPos = pos.add(move.forward, move.file)
         if (isOutsideBoard(newPos)) continue
         const otherPiece = getPiece(state, newPos)
         if (otherPiece == null || (move.attackMove && otherPiece.color != color)) {
             moves.push(newPos)
+        }
+    }
+
+    const castlingMoves = getCastlingMoves(state, color)
+    moves.push(...castlingMoves)
+
+    return moves
+}
+
+// TODO: unit tests
+export const getCastlingMoves = (state: BinaryBoard, color: number): Pos[] => {
+    // check castling
+    // TODO: no pieces are allowed between the king and the rook
+    // to be able to rely on the FEN, we should update those after each move?
+    // TODO: remove castling, either kingside or queenside when the rook for that side moves
+    const isPathFree = (from: Pos, to: Pos): boolean => {
+        const path = getTravelPath(from, to, king)
+        for (let i = 1; i < path.length-1; i++) {// don't check first and last
+            if (getPiece(state, path[i]) != null) {
+                // path is not free
+                return false
+            }
+        }
+        return true
+    }
+    const moves = []
+    if (color == white) {
+        // first check what castling moves are available from the FEN string
+        for (const cases of [{ castlingSide: 'K', pos: new Pos('a6') }, { castlingSide: 'Q', pos: new Pos('a2') }]) {
+            if (state.boardData.castling.indexOf(cases.castlingSide) > -1) {
+                // king is in position
+                // check that path is free
+                if (!isPathFree(Pos.parse('a4'), cases.pos)) continue
+                // check if the king is moving through check
+                if (!isKingMovingThroughCheck(state, color, cases.castlingSide)) {
+                    moves.push(cases.pos)
+                }
+            }
+        }
+    } else {
+        // black
+        // first check what castling moves are available from the FEN string
+        for (const cases of [{ castlingSide: 'k', pos: new Pos('h6') }, { castlingSide: 'q', pos: new Pos('h2') }]) {
+            if (state.boardData.castling.indexOf(cases.castlingSide) > -1) {
+                // king is in position
+                // check that path is free
+                if (!isPathFree(Pos.parse('h4'), cases.pos)) continue
+                // check if the king is moving through check
+                if (!isKingMovingThroughCheck(state, color, cases.castlingSide)) {
+                    moves.push(cases.pos)
+                }
+            }
         }
     }
     return moves
@@ -102,7 +159,7 @@ export const getQueenMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[
 export const getBishopMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[] => {
     if (getPiece(state, pos).type != bishop) throw new Error('Not a bishop')
     let moves: Pos[] = []
-    
+
     for (const move of bishopMoves) {
         if (move.continously) {
             let step = 1
@@ -129,7 +186,7 @@ export const getBishopMoves = (state: BinaryBoard, color: number, pos: Pos): Pos
 export const getKnightMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[] => {
     if (getPiece(state, pos).type != knight) throw new Error(`Not a knight in ${pos.toString()}`)
     let moves: Pos[] = []
-    
+
     for (const move of knightMoves) {
         const newPos = pos.add(move.forward, move.file)
         if (isOutsideBoard(newPos)) continue
@@ -144,7 +201,7 @@ export const getKnightMoves = (state: BinaryBoard, color: number, pos: Pos): Pos
 export const getRookMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[] => {
     if (getPiece(state, pos).type != rook) throw new Error('Not a rook')
     let moves: Pos[] = []
-    
+
     for (const move of rookMoves) {
         const forward = color == white ? move.forward : -move.forward
         if (move.continously) {
@@ -232,3 +289,4 @@ export const getPawnMoves = (state: BinaryBoard, color: number, pos: Pos): Pos[]
     // console.log('moves pawn', moves.length)
     return moves
 }
+

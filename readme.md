@@ -1,9 +1,13 @@
 BUGS:
+- possible to move black pieces as white
+  - freeze black pieces, and don't unfreeze, if AI is on
 - color isn't set on two captures in a row in the capturebox
 - there is a white line in the capturebox at the bottom when a white rook is there
 TODO:
 - add the missing moves (en passant, castling, promotion)
-  - castling
+  - castling https://www.masterclass.com/articles/chess-101-what-is-castling-learn-about-the-2-conditions-that-need-to-be-satisfied-in-chess-before-you-can-castle
+    FEN: https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
+    
   
 - let the AI suggest a move for white
   - Color the suggested move

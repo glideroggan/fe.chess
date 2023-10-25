@@ -1,5 +1,5 @@
-import { isWhite } from '../services/binaryBoard'
-import { boardState, startMoving } from '../services/rules'
+import { boardState, isWhite } from '../services/binaryBoard'
+import { startMoving } from '../services/rules'
 import { Pos } from '../services/utils'
 
 export class ChessPiece extends HTMLElement {

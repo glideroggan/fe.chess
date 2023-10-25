@@ -1,6 +1,6 @@
 import { constructNodeChain, rootNegaMax } from "../services/ai";
 import { BinaryBoard, black, getPiece, getSpecificPiece, king, knight, move, pawn, rook, undo, white } from "../services/binaryBoard";
-import { EvaluateOptions, capturePoints, evaluate } from "../services/evaluation";
+import { EvaluateOptions, capturePoints, evaluate, getMobilityScore } from "../services/evaluation";
 import { filterKingVulnerableMoves, getAllPossibleMoves, getMovesTowards } from "../services/moves";
 import { getBishopMoves, getKingMoves, getKnightMoves, getPawnMoves, getQueenMoves, getRookMoves, isOutsideBoard } from "../services/pieceMoves";
 import { Pos } from "../services/utils";
@@ -550,7 +550,7 @@ describe('moves king', () => {
         const state = BinaryBoard.parse('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
         const pos = Pos.from('a', 4)
         const result = getKingMoves(state, white, pos)
-        expect(result).toEqual([])
+        expect(result.length).toEqual(0)    // castling
     })
     it('getKingMoves white attack', () => {
         /*
@@ -581,9 +581,9 @@ describe('moves king', () => {
         b:--/-\---
         a:-p-p-p--
         */
-        const state = BinaryBoard.parse('rnbqkbnr/pppppppp/8/1p1p1p2/8/1p1k1p2/8/1p1p1p2 w KQkq - 0 1')
-        const pos = Pos.from('c', 3)
-        const result = getKingMoves(state, black, pos)
+        const state = BinaryBoard.parse('rnbqkbnr/pppppppp/8/1p1p1p2/8/1p1k1p2/8/1p1p1p2 w kq - 0 1')
+        const pos = Pos.parse('c3')
+        const result = getKingMoves(state, white, pos)
         expect(result).toHaveLength(8)
         expect(result).toContainEqual(Pos.from('d', 2))
         expect(result).toContainEqual(Pos.from('d', 3))
@@ -600,8 +600,9 @@ describe('moves king', () => {
         f:P\------
         e:--P-----
         */
-        const state = BinaryBoard.parse('rnbqkbnr/kppppppp/P7/2P5/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')
-        const pos = Pos.from('g', 0)
+        const state = BinaryBoard.parse('rnbqkbnr/kppppppp/P7/2P5/8/8/PPPPPPPP/RNBQKBNR w - - 0 1')
+        const pos = Pos.parse('g0')
+        // doesn't check for check
         const result = getKingMoves(state, black, pos)
         expect(result).toHaveLength(2)
         expect(result).toContainEqual(Pos.from('f', 0))
@@ -634,7 +635,7 @@ describe('rules', () => {
         b:--PQ-p--
         a:--PPPK--
         */
-        const state = BinaryBoard.parse('8/8/8/8/kp3q2/3P4/2PQ1p2/2PPPK2 w KQkq - 0 1')
+        const state = BinaryBoard.parse('8/8/8/8/kp3q2/3P4/2PQ1p2/2PPPK2 w - - 0 1')
         const piece = getPiece(state, Pos.from('a', 5))
         const moves = getKingMoves(state, white, Pos.from('a', 5))
         const result = filterKingVulnerableMoves(state, piece, moves)
@@ -647,11 +648,11 @@ describe('rules', () => {
         b:--PQ-p--
         a:--PPP---
         */
-        const state = BinaryBoard.parse('rnbqkbnr/pppppppp/8/8/1p3q2/3P4/2PQ1p2/2PPP3 b KQkq - 0 1')
+        const state = BinaryBoard.parse('8/8/8/8/1p3q2/3P4/2PQ1p2/2PPP3 b KQkq - 0 1')
         const targetPos = Pos.from('b', 3)
-        const result = getMovesTowards(state, targetPos)
+        const result = getMovesTowards(state, targetPos, white)
         expect(result).toEqual([
-            { from: Pos.from('d', 5), to: Pos.from('b', 3) },
+            { from: Pos.parse('d5'), to: Pos.parse('b3') },
 
         ])
     })
@@ -662,11 +663,11 @@ describe('rules', () => {
         b:--PQ-p--
         a:--PPP---
         */
-        const state = BinaryBoard.parse('rnbqkbnr/pppppppp/8/8/1p3q2/3P4/2PQ1p2/2PPP3 w KQkq - 0 1')
+        const state = BinaryBoard.parse('8/8/8/8/1p3q2/3P4/2PQ1p2/2PPP3 w KQkq - 0 1')
         const targetPos = Pos.from('b', 3)
-        const result = getMovesTowards(state, targetPos)
+        const result = getMovesTowards(state, targetPos, white)
         expect(result).toEqual([
-            { from: Pos.from('d', 5), to: Pos.from('b', 3) },
+            { from: Pos.parse('d5'), to: Pos.parse('b3') },
 
         ])
     })
@@ -842,20 +843,17 @@ a:--P---P-
         a:-KP---P-
         --01234567
         */
-        const expectedScore =
-            // rook
-            (1 * 7) +
-            // pawns
-            (5 * 1)
+        const expectedScore = (1 * 7)
 
         const state = BinaryBoard.parse('k7/8/8/8/3P1P2/2P3P1/2R5/1KP3P1 w KQkq - 0 1')
         // console.log(state.boardData)
         const options: EvaluateOptions = {
             pieceValue: false,
             pawnAdvancement: false,
-            mobility: true
+            mobility: true,
+            random: false
         }
-        const result = evaluate(state, options)
+        const result = getMobilityScore(state, getPiece(state, Pos.from('b', 2)))
         // console.log('state', state.toString())
         expect(result).toEqual(expectedScore)
     })

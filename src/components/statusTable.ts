@@ -1,6 +1,5 @@
 import { scoreObservers } from '../services/ai';
-import { isWhite, white } from '../services/binaryBoard';
-import { boardState } from '../services/rules';
+import { boardState, isWhite, white } from '../services/binaryBoard';
 
 export class StatusTable extends HTMLElement {
     root: ShadowRoot

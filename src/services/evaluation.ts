@@ -96,7 +96,6 @@ export const evaluate = (fenState: BinaryBoard, options: EvaluateOptions): numbe
             // guard
             if (piece.typeAndColor == undefined) throw new Error('piece.typeAndColor is undefined')
 
-            // console.log('piece:', piece)
             const mobilityScore = getMobilityScore(fenState, piece)
             const score = piece.color == white ? mobilityScore : mobilityScore * -1
             fullScore += score
@@ -108,7 +107,7 @@ export const evaluate = (fenState: BinaryBoard, options: EvaluateOptions): numbe
 
     return fullScore
 }
-const getMobilityScore = (fenState: BinaryBoard, piece: BinaryPiece, kingCheck: boolean = false): number => {
+export const getMobilityScore = (fenState: BinaryBoard, piece: BinaryPiece, kingCheck: boolean = false): number => {
     const moves = getPossibleMoves(fenState, piece, kingCheck).length
     return moves
 }
