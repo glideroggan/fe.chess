@@ -1,0 +1,7 @@
+version: '3'
+services:
+  app:
+    image: glideroggan/fe.chess:latest
+    container_name: "newchess"
+    ports:
+      - "5082:80"

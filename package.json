@@ -6,7 +6,7 @@
   "scripts": {
     "trans": "nodemon --watch 'src/**/*.ts'",
     "start": "webpack serve",
-    "build": "webpack --mode=production --env ENV=docker --config webpack.prod.js",
+    "build": "webpack --mode=production --config webpack.prod.config.js",
     "build:local": "webpack --env NODE_ENV=localdocker --config webpack.prod.js"
   },
   "devDependencies": {

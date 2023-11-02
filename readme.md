@@ -4,21 +4,22 @@ BUGS:
 - color isn't set on two captures in a row in the capturebox
 - there is a white line in the capturebox at the bottom when a white rook is there
 TODO:
-- add the missing moves (en passant, castling, promotion)
-  - castling https://www.masterclass.com/articles/chess-101-what-is-castling-learn-about-the-2-conditions-that-need-to-be-satisfied-in-chess-before-you-can-castle
-    FEN: https://en.wikipedia.org/wiki/Forsyth%E2%80%93Edwards_Notation
-    
+- add the missing moves (en passant, promotion)
+  - promotion
+    - Need a modal for choosing the promotion piece
+    - AI needs to be able to choose the promotion piece
   
 - let the AI suggest a move for white
   - Color the suggested move
     - the color maybe could be fixed programatically, so that we can slightly change the color of the suggested move
   - hide it behind an option in the game
-  - 
 - Protection (https://www.cs.cornell.edu/boom/2004sp/ProjectArch/Chess/algorithms.html#staticboard)
+- think about evaluating the king
+  - Does it make sense to try to capture the king? From the games perspective it is not about taking the king
+  - but to limit its moves
 
-- docker
-  - put it in docker
 - deploy
+  - put it in docker
   - deploy it to server
   - develop a "deployment" server app that can run on server and pick up github deployment hooks
 
