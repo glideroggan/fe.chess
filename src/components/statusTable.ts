@@ -50,7 +50,7 @@ export class StatusTable extends HTMLElement {
     }
 
     setScore(score: number) {
-        this.bestScore.innerText = `Best Score: ${score}`
+        // this.bestScore.innerText = `Best Score: ${score}`
     }
     setTurn(msg: string) {
         this.turn.innerText = `Turn: ${msg}`

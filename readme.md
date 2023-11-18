@@ -1,5 +1,10 @@
+Investigate bad moves
+- r1b1k1nr/ppQ2pp1/2p1p3/3pP2p/4q3/2P3P1/PP2P2P/RNB1KBR1 b KQkq - 0 14
+  - next move d4 -> a1
+
 BUGS:
 - possible to move black pieces as white
+  This happens after black (AI) have moved, we should trigger the freeze of the black pieces after the AI has moved
   - freeze black pieces, and don't unfreeze, if AI is on
 - color isn't set on two captures in a row in the capturebox
 - there is a white line in the capturebox at the bottom when a white rook is there
